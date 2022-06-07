@@ -1,2 +1,3 @@
 ffmpeg
 opencv-python
+numpy
