@@ -22,6 +22,7 @@ VERSION = '0.1.3'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
+    "click>=8.1,<9.0",
     "ffmpeg>=1.4,<2.0",
     "opencv-python",
 ]
@@ -106,10 +107,9 @@ setup(
     url=URL,
     packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
 
-    # TODO: Add an entry point
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
+    entry_points={
+        'console_scripts': ['cleancredits=cleancredits.cli:cli'],
+    },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
