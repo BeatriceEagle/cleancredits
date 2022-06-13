@@ -6,7 +6,7 @@ import subprocess
 import click
 import cv2
 
-VALID_TIMECODE_RE = re.compile("\d\d:\d\d:\d\d(\.\d+)?")
+VALID_TIMECODE_RE = re.compile(r"\d\d:\d\d:\d\d(\.\d+)?")
 
 
 class TimecodeParamType(click.ParamType):
