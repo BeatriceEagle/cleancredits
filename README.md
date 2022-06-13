@@ -24,6 +24,8 @@ Arguments:
 
 Options:
 
+- `--start/--end`: The start/end timecodes to process from the input video. Default: Start and end of the input video.
+
 - `--radius`: The number of pixels the inpaint algorithm uses for interpolation. The default is 3, and this generally gives good results, but if you want to experiment, go wild.
 
 - `--framerate`: The framerate (fps) of the video being cleaned. The default is 24.
