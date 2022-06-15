@@ -1,4 +1,5 @@
 import os
+import pathlib
 import re
 import shutil
 
@@ -55,12 +56,11 @@ def cli(video, mask, start, end, radius, framerate, output):
         cap = cv2.VideoCapture(video)
         framerate = cap.get(cv2.CAP_PROP_FPS)
 
-    basename = os.path.basename(video)
-    stripped_name, _ = os.path.splitext(basename)
+    video_file = pathlib.Path(video)
 
-    cwd = os.getcwd()
-    clip_folder = os.path.join(cwd, stripped_name)
-    if os.path.exists(clip_folder):
+    cwd = pathlib.Path.cwd()
+    clip_folder = cwd / video_file.stem
+    if clip_folder.exists():
         click.confirm(
             f"Clip folder ({clip_folder}) already exists; do you want to delete it and continue?",
             abort=True,
@@ -68,7 +68,7 @@ def cli(video, mask, start, end, radius, framerate, output):
         )
         shutil.rmtree(clip_folder)
     os.makedirs(clip_folder)
-    output_clip_folder = os.path.join(clip_folder, "output")
+    output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
 
     split_frames(video, clip_folder, start=start, end=end)
