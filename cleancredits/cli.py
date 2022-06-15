@@ -57,6 +57,8 @@ def cli(video, mask, start, end, radius, framerate, output):
         framerate = cap.get(cv2.CAP_PROP_FPS)
 
     video_file = pathlib.Path(video)
+    mask_file = pathlib.Path(mask)
+    output_file = pathlib.Path(output)
 
     cwd = pathlib.Path.cwd()
     clip_folder = cwd / video_file.stem
@@ -71,8 +73,8 @@ def cli(video, mask, start, end, radius, framerate, output):
     output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
 
-    split_frames(video, clip_folder, start=start, end=end)
-    clean_frames(mask, clip_folder, output_clip_folder, radius)
+    split_frames(video_file, clip_folder, start=start, end=end)
+    clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
-        join_frames(output_clip_folder, output, framerate)
+        join_frames(output_clip_folder, output_file, framerate)
