@@ -7,6 +7,7 @@ Installation
 ============
 
 ```bash
+pip install -U pip
 pip install cleancredits
 ```
 
