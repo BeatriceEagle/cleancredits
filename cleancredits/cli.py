@@ -80,7 +80,6 @@ def cli(video, mask, start, end, radius, framerate, output):
 
     video_file = pathlib.Path(video)
     mask_file = pathlib.Path(mask)
-    output_file = pathlib.Path(output)
 
     cwd = pathlib.Path.cwd()
     clip_folder = cwd / video_file.stem
@@ -99,4 +98,5 @@ def cli(video, mask, start, end, radius, framerate, output):
     clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
+        output_file = pathlib.Path(output)
         join_frames(output_clip_folder, output_file, framerate)
