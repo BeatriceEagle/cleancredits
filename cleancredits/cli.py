@@ -8,7 +8,8 @@ import cv2
 
 from .helpers import clean_frames, join_frames, split_frames
 
-VALID_TIMECODE_RE = re.compile(r"\d\d:\d\d:\d\d(\.\d+)?")
+VALID_TIMECODE_RE = re.compile(r"^\d\d:\d\d:\d\d(\.\d+)?$")
+VALID_FRAMERATE_RE = re.compile(r"^\d+(?:/\d+)?$")
 DEFAULT_RADIUS = 3
 
 
@@ -22,6 +23,19 @@ class TimecodeParamType(click.ParamType):
 
 
 TIMECODE = TimecodeParamType()
+
+
+class FramerateParamType(click.ParamType):
+    name = "framerate"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, str) and VALID_FRAMERATE_RE.match(value):
+            return value
+        if isinstance(value, int):
+            return str(value)
+        self.fail("f{value}!r must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)", param, ctx)
+
+FRAMERATE = FramerateParamType()
 
 
 @click.command()
@@ -42,7 +56,7 @@ TIMECODE = TimecodeParamType()
     help=f"Interpolation radius. Default: {DEFAULT_RADIUS}",
 )
 @click.option(
-    "-f", "--framerate", type=int, help="Output framerate. Default: input framerate."
+    "-f", "--framerate", type=FRAMERATE, help="Output framerate. Default: input framerate."
 )
 @click.option(
     "-o",

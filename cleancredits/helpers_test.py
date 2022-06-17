@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal
 
-from .helpers import clean_frames, split_frames
+from .helpers import clean_frames, split_frames, join_frames
 
 FILE_PATH = pathlib.Path(__file__).resolve()
 TESTDATA_PATH = FILE_PATH.parent / "testdata"
@@ -62,3 +62,39 @@ def test_clean_frames(tmp_path):
             cv2.bitwise_and(in_im, in_im, mask=mask_im),
             cv2.bitwise_and(out_im, out_im, mask=mask_im),
         )
+
+def test_join_frames(tmp_path):
+    in_dir = TESTDATA_PATH / "horses-720p"
+    out_file = tmp_path / "output.mp4"
+    expected_framerate = 25
+    assert not out_file.exists()
+    join_frames(in_dir, out_file, expected_framerate)
+    assert out_file.exists()
+    assert out_file.is_file()
+    cap = cv2.VideoCapture(str(out_file))
+    framerate = cap.get(cv2.CAP_PROP_FPS)
+    assert framerate == expected_framerate
+
+def test_join_frames__int_framerate(tmp_path):
+    in_dir = TESTDATA_PATH / "horses-720p"
+    out_file = tmp_path / "output.mp4"
+    expected_framerate = 15
+    assert not out_file.exists()
+    join_frames(in_dir, out_file, expected_framerate)
+    assert out_file.exists()
+    assert out_file.is_file()
+    cap = cv2.VideoCapture(str(out_file))
+    framerate = cap.get(cv2.CAP_PROP_FPS)
+    assert framerate == expected_framerate
+
+def test_join_frames__float_framerate(tmp_path):
+    in_dir = TESTDATA_PATH / "horses-720p"
+    out_file = tmp_path / "output.mp4"
+    expected_framerate = 24000 / 1001
+    assert not out_file.exists()
+    join_frames(in_dir, out_file, "24000/1001")
+    assert out_file.exists()
+    assert out_file.is_file()
+    cap = cv2.VideoCapture(str(out_file))
+    framerate = cap.get(cv2.CAP_PROP_FPS)
+    assert framerate == expected_framerate

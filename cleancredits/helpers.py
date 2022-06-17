@@ -52,10 +52,10 @@ def clean_frames(
         cv2.imwrite(str(out_file), interp)
 
 
-def join_frames(in_dir: pathlib.Path, out_file: pathlib.Path, framerate):
+def join_frames(in_dir: pathlib.Path, out_file: pathlib.Path, framerate: str):
     assert in_dir.is_dir()
 
     in_ = in_dir / SPLIT_FRAME_FILENAME
-    ffmpeg.input(str(in_)).output(
-        str(out_file), vcodec="libx264", pix_fmt="yuv420p", framerate=framerate
+    ffmpeg.input(str(in_)).filter("fps", fps=framerate).output(
+        str(out_file), vcodec="libx264", pix_fmt="yuv420p"
     ).run()
