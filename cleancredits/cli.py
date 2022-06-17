@@ -33,7 +33,12 @@ class FramerateParamType(click.ParamType):
             return value
         if isinstance(value, int):
             return str(value)
-        self.fail("f{value}!r must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)", param, ctx)
+        self.fail(
+            "f{value}!r must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)",
+            param,
+            ctx,
+        )
+
 
 FRAMERATE = FramerateParamType()
 
@@ -56,7 +61,10 @@ FRAMERATE = FramerateParamType()
     help=f"Interpolation radius. Default: {DEFAULT_RADIUS}",
 )
 @click.option(
-    "-f", "--framerate", type=FRAMERATE, help="Output framerate. Default: input framerate."
+    "-f",
+    "--framerate",
+    type=FRAMERATE,
+    help="Output framerate. Default: input framerate.",
 )
 @click.option(
     "-o",

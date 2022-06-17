@@ -1,7 +1,7 @@
 import click
 import pytest
 
-from .cli import TIMECODE, FRAMERATE
+from .cli import FRAMERATE, TIMECODE
 
 
 def test_timecode_param_type__valid_timecode():
@@ -39,15 +39,18 @@ def test_timecode_param_type__invalid_timecode__not_a_string():
     with pytest.raises(click.BadParameter):
         TIMECODE.convert(value, None, None)
 
+
 def test_framerate_param_type__valid_framerate():
     value = "25"
     result = FRAMERATE.convert(value, None, None)
     assert result == value
 
+
 def test_framerate_param_type__valid_framerate__int():
     value = 25
     result = FRAMERATE.convert(value, None, None)
     assert result == str(value)
+
 
 def test_framerate_param_type__valid_framerate__int_ratio():
     value = "24000/1001"
