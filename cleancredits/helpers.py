@@ -24,15 +24,15 @@ def split_frames(video_file: pathlib.Path, out_dir: pathlib.Path, start=None, en
 
 
 def clean_frames(
-    mask_file: pathlib.Path, in_dir: pathlib.Path, out_dir: pathlib.Path, radius
+    mask_file: pathlib.Path, in_dir: pathlib.Path, out_dir: pathlib.Path, radius: int
 ):
     """For each input frame, clean it based on the mask file"""
     assert mask_file.is_file()
     assert in_dir.is_dir()
     assert out_dir.is_dir()
 
-    mask_img = cv2.imread(str(mask_file))
-    mask_img = cv2.cvtColor(mask_img, cv2.COLOR_BGR2GRAY)
+    mask_im = cv2.imread(str(mask_file), cv2.IMREAD_GRAYSCALE)
+    _, mask_im = cv2.threshold(mask_im, 1, 255, cv2.THRESH_BINARY)
     paths = sorted(in_dir.iterdir(), key=attrgetter("name"))
     for in_file in paths:
         out_file = out_dir / in_file.name
@@ -45,7 +45,7 @@ def clean_frames(
         orig = cv2.imread(str(in_file))
         orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
 
-        interp = cv2.inpaint(orig, mask_img, radius, cv2.INPAINT_TELEA)
+        interp = cv2.inpaint(orig, mask_im, radius, cv2.INPAINT_TELEA)
         interp = cv2.cvtColor(interp, cv2.COLOR_BGR2RGB)
         interp = interp.astype(int)
 
