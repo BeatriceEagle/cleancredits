@@ -19,7 +19,7 @@ class TimecodeParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if isinstance(value, str) and VALID_TIMECODE_RE.match(value):
             return value
-        self.fail("f{value}!r must be a timecode in the format HH:MM:SS", param, ctx)
+        self.fail(f"{value!r} must be a timecode in the format HH:MM:SS", param, ctx)
 
 
 TIMECODE = TimecodeParamType()
@@ -34,7 +34,7 @@ class FramerateParamType(click.ParamType):
         if isinstance(value, int):
             return str(value)
         self.fail(
-            "f{value}!r must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)",
+            f"{value!r} must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)",
             param,
             ctx,
         )
