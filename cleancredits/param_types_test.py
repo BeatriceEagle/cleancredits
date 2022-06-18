@@ -1,7 +1,7 @@
 import click
 import pytest
 
-from .cli import FRAMERATE, TIMECODE
+from .param_types import FRAMERATE, TIMECODE
 
 
 def test_timecode_param_type__valid_timecode():
