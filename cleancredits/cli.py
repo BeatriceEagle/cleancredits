@@ -1,12 +1,16 @@
 import os
+import pathlib
 import re
 import shutil
-import subprocess
 
 import click
 import cv2
 
-VALID_TIMECODE_RE = re.compile("\d\d:\d\d:\d\d(\.\d+)?")
+from .helpers import clean_frames, join_frames, split_frames
+
+VALID_TIMECODE_RE = re.compile(r"^\d\d:\d\d:\d\d(\.\d+)?$")
+VALID_FRAMERATE_RE = re.compile(r"^\d+(?:/\d+)?$")
+DEFAULT_RADIUS = 3
 
 
 class TimecodeParamType(click.ParamType):
@@ -15,10 +19,28 @@ class TimecodeParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if isinstance(value, str) and VALID_TIMECODE_RE.match(value):
             return value
-        self.fail("f{value}!r must be a timecode in the format HH:MM:SS", param, ctx)
+        self.fail(f"{value!r} must be a timecode in the format HH:MM:SS", param, ctx)
 
 
 TIMECODE = TimecodeParamType()
+
+
+class FramerateParamType(click.ParamType):
+    name = "framerate"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, str) and VALID_FRAMERATE_RE.match(value):
+            return value
+        if isinstance(value, int):
+            return str(value)
+        self.fail(
+            f"{value!r} must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)",
+            param,
+            ctx,
+        )
+
+
+FRAMERATE = FramerateParamType()
 
 
 @click.command()
@@ -32,8 +54,18 @@ TIMECODE = TimecodeParamType()
 @click.option(
     "-e", "--end", help="End timecode (HH:MM:SS) in the input video", type=TIMECODE
 )
-@click.option("-r", "--radius", default=3, help="Interpolation radius")
-@click.option("-f", "--framerate", default=24)
+@click.option(
+    "-r",
+    "--radius",
+    default=DEFAULT_RADIUS,
+    help=f"Interpolation radius. Default: {DEFAULT_RADIUS}",
+)
+@click.option(
+    "-f",
+    "--framerate",
+    type=FRAMERATE,
+    help="Output framerate. Default: input framerate.",
+)
 @click.option(
     "-o",
     "--output",
@@ -41,12 +73,17 @@ TIMECODE = TimecodeParamType()
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
 )
 def cli(video, mask, start, end, radius, framerate, output):
-    basename = os.path.basename(video)
-    stripped_name, _ = os.path.splitext(basename)
+    if not framerate:
+        # Default to the input video's framerate
+        cap = cv2.VideoCapture(video)
+        framerate = cap.get(cv2.CAP_PROP_FPS)
 
-    cwd = os.getcwd()
-    clip_folder = os.path.join(cwd, stripped_name)
-    if os.path.exists(clip_folder):
+    video_file = pathlib.Path(video)
+    mask_file = pathlib.Path(mask)
+
+    cwd = pathlib.Path.cwd()
+    clip_folder = cwd / video_file.stem
+    if clip_folder.exists():
         click.confirm(
             f"Clip folder ({clip_folder}) already exists; do you want to delete it and continue?",
             abort=True,
@@ -54,49 +91,12 @@ def cli(video, mask, start, end, radius, framerate, output):
         )
         shutil.rmtree(clip_folder)
     os.makedirs(clip_folder)
-
-    export_frames_args = ["ffmpeg"]
-    if start:
-        export_frames_args += ["-ss", start]
-    export_frames_args += ["-i", video]
-    if end:
-        export_frames_args += ["-to", end]
-    export_frames_args += [
-        "-r",
-        f"{framerate}/1",
-        f"{stripped_name}/%03d{stripped_name}.png",
-    ]
-    subprocess.run(export_frames_args)
-
-    mask = cv2.imread(mask)
-    mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-    output_clip_folder = os.path.join(clip_folder, "output")
-    os.chdir(clip_folder)
-    files = sorted(os.listdir(clip_folder))
+    output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
-    for f in files:
-        print(f)
-        orig = cv2.imread(f)
-        orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
 
-        interp = cv2.inpaint(orig, mask, radius, cv2.INPAINT_TELEA)
-        interp = cv2.cvtColor(interp, cv2.COLOR_BGR2RGB)
-        interp = interp.astype(int)
-
-        cv2.imwrite(os.path.join(output_clip_folder, f), interp)
+    split_frames(video_file, clip_folder, start=start, end=end)
+    clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-framerate",
-                f"{framerate}",
-                "-i",
-                os.path.join(output_clip_folder, f"%03d{stripped_name}.png"),
-                "-vcodec",
-                "libx264",
-                "-pix_fmt",
-                "yuv420p",
-                output,
-            ],
-        )
+        output_file = pathlib.Path(output)
+        join_frames(output_clip_folder, output_file, framerate)

@@ -23,7 +23,7 @@ VERSION = "0.1.3"
 # What packages are required for this module to be executed?
 REQUIRED = [
     "click>=8.1,<9.0",
-    "ffmpeg>=1.4,<2.0",
+    "ffmpeg-python>=0.2,<1.0",
     "opencv-python",
 ]
 
