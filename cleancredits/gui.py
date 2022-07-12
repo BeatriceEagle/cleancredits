@@ -59,10 +59,10 @@ class HSVMaskApp(ttk.Frame):
             self, width=video_width, height=video_height, style="Video.TFrame"
         )
         self.video_frame.grid(row=0, column=0, sticky="nw")
-        self.video_label = ttk.Label(self.video_frame)
-        self.video_label.grid(row=0, column=0, sticky="nw")
-        self.video_label.bind("<Button-1>", self.handle_image_click)
-        self.video_label.bind("<B1-Motion>", self.handle_image_click)
+        self.display = ttk.Label(self.video_frame)
+        self.display.grid(row=0, column=0, sticky="nw")
+        self.display.bind("<Button-1>", self.handle_image_click)
+        self.display.bind("<B1-Motion>", self.handle_image_click)
 
         self.options_frame = ttk.Frame(self, style="Options.TFrame")
         self.options_frame.grid(row=0, column=1, sticky="n")
@@ -70,19 +70,21 @@ class HSVMaskApp(ttk.Frame):
         self.options_frame.columnconfigure(0, weight=1)
         self.options_frame.columnconfigure(1, weight=4)
 
-        self.current_frame = tk.IntVar()
-        self.current_frame.set(start_frame)
+        self.selected_frame_num = tk.IntVar()
+        self.selected_frame_num.set(start_frame)
         ttk.Label(self.options_frame, text="Frame").grid(row=0, column=0)
         self.current_frame_scale = tk.Scale(
             self.options_frame,
             from_=start_frame,
             to=end_frame,
-            variable=self.current_frame,
+            variable=self.selected_frame_num,
             resolution=1,
             orient=tk.HORIZONTAL,
         )
+        # Load first frame
+        self._select_frame()
         self.current_frame_scale.grid(row=0, column=1)
-        handle_scale_release(self.current_frame_scale, self.show_frame)
+        handle_scale_release(self.current_frame_scale, self.handle_frame_change)
 
         self.display_mode = tk.StringVar()
         self.display_mode.set(HSV_MODE_MASKED)
@@ -92,21 +94,21 @@ class HSVMaskApp(ttk.Frame):
             text=HSV_MODE_UNMASKED,
             value=HSV_MODE_UNMASKED,
             variable=self.display_mode,
-            command=self.show_frame,
+            command=self.render_display,
         ).grid(row=1, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_MASKED,
             value=HSV_MODE_MASKED,
             variable=self.display_mode,
-            command=self.show_frame,
+            command=self.render_display,
         ).grid(row=2, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_PREVIEW,
             value=HSV_MODE_PREVIEW,
             variable=self.display_mode,
-            command=self.show_frame,
+            command=self.render_display,
         ).grid(row=3, column=1, sticky="w")
 
         ttk.Label(self.options_frame, text="HSV Selection").grid(
@@ -128,7 +130,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.hue_min_scale.grid(row=110, column=1)
-        handle_scale_release(self.hue_min_scale, self.show_frame)
+        handle_scale_release(self.hue_min_scale, self.render_display)
         self.hue_max = tk.IntVar()
         self.hue_max.set(179)
         ttk.Label(self.options_frame, text="Hue Max").grid(row=111, column=0)
@@ -141,7 +143,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.hue_max_scale.grid(row=111, column=1)
-        handle_scale_release(self.hue_max_scale, self.show_frame)
+        handle_scale_release(self.hue_max_scale, self.render_display)
 
         # Saturation
         self.sat_min = tk.IntVar()
@@ -156,7 +158,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.sat_min_scale.grid(row=112, column=1)
-        handle_scale_release(self.sat_min_scale, self.show_frame)
+        handle_scale_release(self.sat_min_scale, self.render_display)
         self.sat_max = tk.IntVar()
         self.sat_max.set(255)
         ttk.Label(self.options_frame, text="Sat Max").grid(row=113, column=0)
@@ -169,7 +171,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.sat_max_scale.grid(row=113, column=1)
-        handle_scale_release(self.sat_max_scale, self.show_frame)
+        handle_scale_release(self.sat_max_scale, self.render_display)
 
         # Value
         self.val_min = tk.IntVar()
@@ -184,7 +186,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.val_min_scale.grid(row=105, column=1)
-        handle_scale_release(self.val_min_scale, self.show_frame)
+        handle_scale_release(self.val_min_scale, self.render_display)
         self.val_max = tk.IntVar()
         self.val_max.set(255)
         ttk.Label(self.options_frame, text="Val Max").grid(row=106, column=0)
@@ -197,7 +199,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.val_max_scale.grid(row=106, column=1)
-        handle_scale_release(self.val_max_scale, self.show_frame)
+        handle_scale_release(self.val_max_scale, self.render_display)
 
         ttk.Label(self.options_frame, text="Mask alteration").grid(
             row=200, column=0, columnspan=2, **SECTION_PADDING
@@ -214,7 +216,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.grow_scale.grid(row=201, column=1)
-        handle_scale_release(self.grow_scale, self.show_frame)
+        handle_scale_release(self.grow_scale, self.render_display)
 
         self.bbox_x1 = tk.IntVar()
         self.bbox_x1.set(0)
@@ -228,7 +230,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.bbox_x1_scale.grid(row=210, column=1)
-        handle_scale_release(self.bbox_x1_scale, self.show_frame)
+        handle_scale_release(self.bbox_x1_scale, self.render_display)
         self.bbox_y1 = tk.IntVar()
         self.bbox_y1.set(0)
         ttk.Label(self.options_frame, text="Bounding Box Y1").grid(row=211, column=0)
@@ -241,7 +243,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.bbox_y1_scale.grid(row=211, column=1)
-        handle_scale_release(self.bbox_y1_scale, self.show_frame)
+        handle_scale_release(self.bbox_y1_scale, self.render_display)
         self.bbox_x2 = tk.IntVar()
         self.bbox_x2.set(video_width)
         ttk.Label(self.options_frame, text="Bounding Box X2").grid(row=212, column=0)
@@ -254,7 +256,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.bbox_x2_scale.grid(row=212, column=1)
-        handle_scale_release(self.bbox_x2_scale, self.show_frame)
+        handle_scale_release(self.bbox_x2_scale, self.render_display)
         self.bbox_y2 = tk.IntVar()
         self.bbox_y2.set(video_height)
         ttk.Label(self.options_frame, text="Bounding Box Y2").grid(row=213, column=0)
@@ -267,7 +269,7 @@ class HSVMaskApp(ttk.Frame):
             orient=tk.HORIZONTAL,
         )
         self.bbox_y2_scale.grid(row=213, column=1)
-        handle_scale_release(self.bbox_y2_scale, self.show_frame)
+        handle_scale_release(self.bbox_y2_scale, self.render_display)
 
         self.draw_mode = tk.StringVar()
         self.draw_mode.set(DRAW_MODE_NONE)
@@ -307,7 +309,7 @@ class HSVMaskApp(ttk.Frame):
         )
         self.save_button.grid(row=1000, column=0, columnspan=2, **SECTION_PADDING)
 
-        self.show_frame()
+        self.render_display()
 
     def handle_image_click(self, event):
         draw_mode = self.draw_mode.get()
@@ -323,8 +325,7 @@ class HSVMaskApp(ttk.Frame):
             color = 255
 
         cv2.circle(mask, (event.x, event.y), draw_size, color=color, thickness=-1)
-        cv2.imshow("newwindow", mask)
-        self.show_frame()
+        self.render_display()
 
     def show_colorchooser(self):
         color = colorchooser.askcolor()
@@ -338,10 +339,20 @@ class HSVMaskApp(ttk.Frame):
             self.sat_max.set(sat + COLORCHOOSER_FUZZ)
             self.val_min.set(val - COLORCHOOSER_FUZZ)
             self.val_max.set(val + COLORCHOOSER_FUZZ)
-            self.show_frame()
+            self.render_display()
+
+    def _select_frame(self):
+        selected_frame_num = self.selected_frame_num.get()
+        self.cap.set(cv2.CAP_PROP_POS_FRAMES, selected_frame_num)
+        _, self.selected_frame = self.cap.read()
+        if self.selected_frame is None:
+            raise Exception(f"Invalid frame: {selected_frame_num}")
+
+    def handle_frame_change(self, val=None):
+        self._select_frame()
+        self.render_display()
 
     def _get_mask(self):
-        current_frame = self.current_frame.get()
         hue_min = self.hue_min.get()
         hue_max = self.hue_max.get()
         sat_min = self.sat_min.get()
@@ -359,12 +370,7 @@ class HSVMaskApp(ttk.Frame):
         hsv_min = np.array([hue_min, sat_min, val_min])
         hsv_max = np.array([hue_max, sat_max, val_max])
 
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
-        _, frame = self.cap.read()
-        if frame is None:
-            raise Exception(f"Invalid frame: {current_frame}")
-
-        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        frame_hsv = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2HSV)
         hsv_mask = cv2.inRange(frame_hsv, hsv_min, hsv_max)
 
         # Modify the hsv_mask
@@ -383,32 +389,31 @@ class HSVMaskApp(ttk.Frame):
         mask = cv2.bitwise_or(mask, self.include_mask)
         mask = cv2.bitwise_and(mask, self.exclude_mask)
 
-        return frame, mask
+        return mask
 
-    def show_frame(self, val=None):
-        frame, mask = self._get_mask()
+    def render_display(self, val=None):
+        mask = self._get_mask()
         display_mode = self.display_mode.get()
         # TODO: Make radius configurable
         radius = 3
 
         # Render the displayed image
         if display_mode == HSV_MODE_UNMASKED:
-            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            img = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGBA)
         elif display_mode == HSV_MODE_MASKED:
-            img = cv2.bitwise_and(frame, frame, mask=mask)
+            img = cv2.bitwise_and(self.selected_frame, self.selected_frame, mask=mask)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
         else:
-            print("cleaning...")
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGB)
             img = cv2.inpaint(frame_rgb, mask, radius, cv2.INPAINT_TELEA)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
 
         imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
         # Prevent garbage collection
-        self.video_label.imgtk = imgtk
-        self.video_label.configure(image=imgtk)
+        self.display.imgtk = imgtk
+        self.display.configure(image=imgtk)
 
     def save_and_quit(self):
-        _, mask = self._get_mask()
+        mask = self._get_mask()
         cv2.imwrite(str(self.out_file), mask)
         self.master.destroy()
