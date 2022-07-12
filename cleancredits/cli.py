@@ -2,16 +2,17 @@ import os
 import pathlib
 import re
 import shutil
+import tkinter as tk
 
 import click
 import cv2
 
 from .helpers import clean_frames, join_frames, split_frames
-from .mask import unchanged_pixels_mask
-from .param_types import FRAMERATE, TIMECODE
+from .gui import HSVMaskApp
+from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
+
 
 DEFAULT_RADIUS = 3
-
 
 @click.group()
 def cli():
@@ -23,28 +24,35 @@ def cli():
     "video", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
 )
 @click.option(
-    "-s", "--start", help="Start timecode (HH:MM:SS) in the input video", type=TIMECODE
+    "-s", "--start", help="Start timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
-    "-e", "--end", help="End timecode (HH:MM:SS) in the input video", type=TIMECODE
-)
-@click.option("-t", "--threshold", help="Sensitivity threshold (1-255)", default=127)
-@click.option(
-    "-d",
-    "--dilate",
-    help="Amount to 'dilate' (grow) the selected area of the mask",
-    default=0,
+    "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
     "-o",
     "--output",
-    help="Convert frames to video and output to this location if set",
+    help="Output mask to this location",
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     required=True,
 )
-def generate_mask(video, start, end, threshold, dilate, output):
-    out_file = pathlib.Path(output)
-    unchanged_pixels_mask(video, start, end, threshold, dilate, out_file)
+def generate_hsv_mask(video, start, end, output):
+    cap = cv2.VideoCapture(video)
+    video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    start_frame = timecode_to_frame(start, fps, default=0)
+    end_frame = timecode_to_frame(end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
+
+    root = tk.Tk()
+    root.title('HSV Mask')
+
+    options_size = 300
+    root.geometry(f'{video_width + options_size}x{video_height}+0+0')
+    root.minsize(video_width+options_size, video_height)
+
+    app = HSVMaskApp(root, cap, start_frame, end_frame, output)
+    app.mainloop()
 
 
 @cli.command()

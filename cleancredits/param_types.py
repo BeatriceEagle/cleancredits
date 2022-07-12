@@ -4,7 +4,7 @@ import re
 import click
 
 VALID_TIMECODE_RE = re.compile(
-    r"^(?P<hours>\d\d):(?P<minutes>\d\d):(?P<seconds>\d\d(\.\d+)?)$"
+    r"^(?P<hours>\d\d):(?P<minutes>\d\d):(?P<seconds>\d\d(\.\d+)?)(?::(?P<frames>\d\d))?$"
 )
 VALID_FRAMERATE_RE = re.compile(r"^\d+(?:/\d+)?$")
 
@@ -15,7 +15,7 @@ class TimecodeParamType(click.ParamType):
     def convert(self, value, param, ctx):
         if isinstance(value, str) and VALID_TIMECODE_RE.match(value):
             return value
-        self.fail(f"{value!r} must be a timecode in the format HH:MM:SS", param, ctx)
+        self.fail(f"{value!r} must be a timecode in the format HH:MM:SS[:frame]", param, ctx)
 
 
 TIMECODE = TimecodeParamType()
@@ -49,4 +49,7 @@ def timecode_to_frame(timecode, fps, default=None):
         + (int(times["hours"]) * 60 * 60)
     )
 
-    return math.floor(seconds * fps)
+    frame_num = math.floor(seconds * fps)
+    if times['frames']:
+        frame_num += int(times['frames'])
+    return frame_num
