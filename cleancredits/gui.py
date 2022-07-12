@@ -371,6 +371,18 @@ class HSVMaskApp(ttk.Frame):
         )
         return zoom_factor, crop_x, crop_y, zoom_width, zoom_height
 
+    def _get_img_coords(self, zoomed_coords):
+        zoomed_x, zoomed_y = zoomed_coords
+        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
+        # For the target pixel, compute the pixel in the original image.
+        # crop_x and crop_y are the "origin" coordinates for the box in the
+        # original image, so if we divide the scaled coordinates
+        # by the zoom factor and add that to the "origin" coordinates,
+        # we should get the original coordinates.
+        img_x = int(zoomed_x // zoom_factor) + crop_x
+        img_y = int(zoomed_y // zoom_factor) + crop_y
+        return img_x, img_y
+
     def handle_display_motion(self, event):
         draw_mode = self.draw_mode.get()
         if draw_mode == DRAW_MODE_NONE:
@@ -379,14 +391,7 @@ class HSVMaskApp(ttk.Frame):
         img = self._display.copy()
         color = [200, 200, 200]
         draw_size = self.draw_size.get()
-        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
-        img_x = int(event.x // zoom_factor) + crop_x
-        img_y = int(event.y // zoom_factor) + crop_y
-        # For the target pixel, compute the pixel in the original image.
-        # crop_x and crop_y are the "origin" coordinates for the box in the
-        # original image, so if we divide the scaled coordinates
-        # by the zoom factor and add that to the "origin" coordinates,
-        # we should get the original coordinates.
+        img_x, img_y = self._get_img_coords((event.x, event.y))
         cv2.circle(img, (img_x, img_y), draw_size // 2, color=color, thickness=1)
         self.render(img=img)
 
@@ -395,16 +400,12 @@ class HSVMaskApp(ttk.Frame):
         if draw_mode == DRAW_MODE_NONE:
             return
 
-        if event.type.name == "ButtonPress":
-            self.draw_prev = (event.x, event.y)
-            return
-
         if event.type.name == "ButtonRelease":
             self.draw_prev = None
             return
 
         draw_size = self.draw_size.get()
-        pt = (event.x, event.y)
+        pt = self._get_img_coords((event.x, event.y))
         draw_prev = self.draw_prev or pt
 
         if draw_mode == DRAW_MODE_EXCLUDE:
