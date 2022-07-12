@@ -167,7 +167,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.hue_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=110, column=1)
         self.hue_max = tk.IntVar()
         self.hue_max.set(179)
@@ -179,7 +179,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.hue_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=111, column=1)
 
         # Saturation
@@ -193,7 +193,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.sat_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=112, column=1)
         self.sat_max = tk.IntVar()
         self.sat_max.set(255)
@@ -205,7 +205,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.sat_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=113, column=1)
 
         # Value
@@ -219,7 +219,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.val_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=105, column=1)
         self.val_max = tk.IntVar()
         self.val_max.set(255)
@@ -231,7 +231,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.val_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=106, column=1)
 
         ttk.Label(self.options_frame, text="Mask alteration").grid(
@@ -247,7 +247,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.grow,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=201, column=1)
 
         self.bbox_x1 = tk.IntVar()
@@ -260,7 +260,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.bbox_x1,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=210, column=1)
         self.bbox_y1 = tk.IntVar()
         self.bbox_y1.set(0)
@@ -272,7 +272,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.bbox_y1,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=211, column=1)
         self.bbox_x2 = tk.IntVar()
         self.bbox_x2.set(self.video_width)
@@ -284,7 +284,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.bbox_x2,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=212, column=1)
         self.bbox_y2 = tk.IntVar()
         self.bbox_y2.set(self.video_height)
@@ -296,7 +296,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.bbox_y2,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.handle_mask_change,
         ).grid(row=213, column=1)
 
         self.draw_mode = tk.StringVar()
@@ -337,6 +337,7 @@ class HSVMaskApp(ttk.Frame):
         )
         self.save_button.grid(row=1000, column=0, columnspan=2, **SECTION_PADDING)
 
+        self._cache_mask()
         self.render_display()
 
     def get_zoom_and_crop(self):
@@ -377,6 +378,7 @@ class HSVMaskApp(ttk.Frame):
             color = 255
 
         cv2.circle(mask, (img_x, img_y), draw_size, color=color, thickness=-1)
+        self._cache_mask()
         self.render_display()
 
     def show_colorchooser(self):
@@ -402,9 +404,14 @@ class HSVMaskApp(ttk.Frame):
 
     def handle_frame_change(self, val=None):
         self._select_frame()
+        self._cache_mask()
         self.render_display()
 
-    def _get_mask(self):
+    def handle_mask_change(self, val=None):
+        self._cache_mask()
+        self.render_display()
+
+    def _cache_mask(self):
         hue_min = self.hue_min.get()
         hue_max = self.hue_max.get()
         sat_min = self.sat_min.get()
@@ -441,10 +448,9 @@ class HSVMaskApp(ttk.Frame):
         mask = cv2.bitwise_or(mask, self.include_mask)
         mask = cv2.bitwise_and(mask, self.exclude_mask)
 
-        return mask
+        self._mask = mask
 
     def render_display(self, val=None):
-        mask = self._get_mask()
         display_mode = self.display_mode.get()
         # TODO: Make radius configurable
         radius = 3
@@ -453,11 +459,13 @@ class HSVMaskApp(ttk.Frame):
         if display_mode == HSV_MODE_UNMASKED:
             img = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGBA)
         elif display_mode == HSV_MODE_MASKED:
-            img = cv2.bitwise_and(self.selected_frame, self.selected_frame, mask=mask)
+            img = cv2.bitwise_and(
+                self.selected_frame, self.selected_frame, mask=self._mask
+            )
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
         else:
             frame_rgb = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGB)
-            img = cv2.inpaint(frame_rgb, mask, radius, cv2.INPAINT_TELEA)
+            img = cv2.inpaint(frame_rgb, self._mask, radius, cv2.INPAINT_TELEA)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
 
         # Crop to the specified center, then zoom
@@ -477,6 +485,5 @@ class HSVMaskApp(ttk.Frame):
         self.display.configure(image=imgtk)
 
     def save_and_quit(self):
-        mask = self._get_mask()
-        cv2.imwrite(str(self.out_file), mask)
+        cv2.imwrite(str(self.out_file), self._mask)
         self.master.destroy()
