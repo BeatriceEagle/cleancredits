@@ -121,85 +121,79 @@ class HSVMaskApp(ttk.Frame):
         self.hue_min = tk.IntVar()
         self.hue_min.set(0)
         ttk.Label(self.options_frame, text="Hue Min").grid(row=110, column=0)
-        self.hue_min_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=179,
             variable=self.hue_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.hue_min_scale.grid(row=110, column=1)
-        handle_scale_release(self.hue_min_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=110, column=1)
         self.hue_max = tk.IntVar()
         self.hue_max.set(179)
         ttk.Label(self.options_frame, text="Hue Max").grid(row=111, column=0)
-        self.hue_max_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=179,
             variable=self.hue_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.hue_max_scale.grid(row=111, column=1)
-        handle_scale_release(self.hue_max_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=111, column=1)
 
         # Saturation
         self.sat_min = tk.IntVar()
         self.sat_min.set(0)
         ttk.Label(self.options_frame, text="Sat Min").grid(row=112, column=0)
-        self.sat_min_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=255,
             variable=self.sat_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.sat_min_scale.grid(row=112, column=1)
-        handle_scale_release(self.sat_min_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=112, column=1)
         self.sat_max = tk.IntVar()
         self.sat_max.set(255)
         ttk.Label(self.options_frame, text="Sat Max").grid(row=113, column=0)
-        self.sat_max_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=255,
             variable=self.sat_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.sat_max_scale.grid(row=113, column=1)
-        handle_scale_release(self.sat_max_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=113, column=1)
 
         # Value
         self.val_min = tk.IntVar()
         self.val_min.set(0)
         ttk.Label(self.options_frame, text="Val Min").grid(row=105, column=0)
-        self.val_min_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=255,
             variable=self.val_min,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.val_min_scale.grid(row=105, column=1)
-        handle_scale_release(self.val_min_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=105, column=1)
         self.val_max = tk.IntVar()
         self.val_max.set(255)
         ttk.Label(self.options_frame, text="Val Max").grid(row=106, column=0)
-        self.val_max_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=255,
             variable=self.val_max,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.val_max_scale.grid(row=106, column=1)
-        handle_scale_release(self.val_max_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=106, column=1)
 
         ttk.Label(self.options_frame, text="Mask alteration").grid(
             row=200, column=0, columnspan=2, **SECTION_PADDING
@@ -207,69 +201,64 @@ class HSVMaskApp(ttk.Frame):
         self.grow = tk.IntVar()
         self.grow.set(0)
         ttk.Label(self.options_frame, text="Grow").grid(row=201, column=0)
-        self.grow_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=20,
             variable=self.grow,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.grow_scale.grid(row=201, column=1)
-        handle_scale_release(self.grow_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=201, column=1)
 
         self.bbox_x1 = tk.IntVar()
         self.bbox_x1.set(0)
         ttk.Label(self.options_frame, text="Bounding Box X1").grid(row=210, column=0)
-        self.bbox_x1_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=video_width,
             variable=self.bbox_x1,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.bbox_x1_scale.grid(row=210, column=1)
-        handle_scale_release(self.bbox_x1_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=210, column=1)
         self.bbox_y1 = tk.IntVar()
         self.bbox_y1.set(0)
         ttk.Label(self.options_frame, text="Bounding Box Y1").grid(row=211, column=0)
-        self.bbox_y1_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=video_height,
             variable=self.bbox_y1,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.bbox_y1_scale.grid(row=211, column=1)
-        handle_scale_release(self.bbox_y1_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=211, column=1)
         self.bbox_x2 = tk.IntVar()
         self.bbox_x2.set(video_width)
         ttk.Label(self.options_frame, text="Bounding Box X2").grid(row=212, column=0)
-        self.bbox_x2_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=video_width,
             variable=self.bbox_x2,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.bbox_x2_scale.grid(row=212, column=1)
-        handle_scale_release(self.bbox_x2_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=212, column=1)
         self.bbox_y2 = tk.IntVar()
         self.bbox_y2.set(video_height)
         ttk.Label(self.options_frame, text="Bounding Box Y2").grid(row=213, column=0)
-        self.bbox_y2_scale = tk.Scale(
+        tk.Scale(
             self.options_frame,
             from_=0,
             to=video_height,
             variable=self.bbox_y2,
             resolution=1,
             orient=tk.HORIZONTAL,
-        )
-        self.bbox_y2_scale.grid(row=213, column=1)
-        handle_scale_release(self.bbox_y2_scale, self.render_display)
+            command=self.render_display,
+        ).grid(row=213, column=1)
 
         self.draw_mode = tk.StringVar()
         self.draw_mode.set(DRAW_MODE_NONE)
