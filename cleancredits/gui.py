@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 
+HSV_MODE_UNMASKED = "Unmasked"
 HSV_MODE_MASKED = "Masked"
 HSV_MODE_PREVIEW = "Preview"
 
@@ -71,18 +72,25 @@ class HSVMaskApp(ttk.Frame):
         ttk.Label(self.options_frame, text="Mode").grid(row=1, column=0)
         ttk.Radiobutton(
             self.options_frame,
+            text=HSV_MODE_UNMASKED,
+            value=HSV_MODE_UNMASKED,
+            variable=self.mode,
+            command=self.show_frame,
+        ).grid(row=1, column=1, sticky="w")
+        ttk.Radiobutton(
+            self.options_frame,
             text=HSV_MODE_MASKED,
             value=HSV_MODE_MASKED,
             variable=self.mode,
             command=self.show_frame,
-        ).grid(row=1, column=1, sticky="w")
+        ).grid(row=2, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_PREVIEW,
             value=HSV_MODE_PREVIEW,
             variable=self.mode,
             command=self.show_frame,
-        ).grid(row=2, column=1, sticky="w")
+        ).grid(row=3, column=1, sticky="w")
 
         ttk.Label(self.options_frame, text="HSV Selection").grid(
             row=100, column=0, columnspan=2
@@ -299,7 +307,9 @@ class HSVMaskApp(ttk.Frame):
         radius = 3
 
         # Render the displayed image
-        if mode == HSV_MODE_MASKED:
+        if mode == HSV_MODE_UNMASKED:
+            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+        elif mode == HSV_MODE_MASKED:
             img = cv2.bitwise_and(frame, frame, mask=mask)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
         else:
