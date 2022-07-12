@@ -42,8 +42,8 @@ class HSVMaskApp(ttk.Frame):
         self.style.configure("Options.TFrame")
 
         self.cap = cap
-        video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        self.video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.out_file = out_file
@@ -51,12 +51,14 @@ class HSVMaskApp(ttk.Frame):
         if input_mask:
             self.input_mask = cv2.imread(str(input_mask))
             self.input_mask = cv2.cvtColor(self.input_mask, cv2.COLOR_BGR2GRAY)
-        self.include_mask = np.zeros((video_height, video_width), np.uint8)
-        self.exclude_mask = np.full((video_height, video_width), 255, np.uint8)
+        self.include_mask = np.zeros((self.video_height, self.video_width), np.uint8)
+        self.exclude_mask = np.full(
+            (self.video_height, self.video_width), 255, np.uint8
+        )
 
         # Set up video display
         self.video_frame = ttk.Frame(
-            self, width=video_width, height=video_height, style="Video.TFrame"
+            self, width=self.video_width, height=self.video_height, style="Video.TFrame"
         )
         self.video_frame.grid(row=0, column=0, sticky="nw")
         self.display = ttk.Label(self.video_frame)
@@ -99,24 +101,24 @@ class HSVMaskApp(ttk.Frame):
             command=self.render_display,
         ).grid(row=1, column=1)
         self.zoom_center_x = tk.IntVar()
-        self.zoom_center_x.set(video_width // 2)
+        self.zoom_center_x.set(self.video_width // 2)
         ttk.Label(self.options_frame, text="Zoom center x").grid(row=2, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_width,
+            to=self.video_width,
             variable=self.zoom_center_x,
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.render_display,
         ).grid(row=2, column=1)
         self.zoom_center_y = tk.IntVar()
-        self.zoom_center_y.set(video_height // 2)
+        self.zoom_center_y.set(self.video_height // 2)
         ttk.Label(self.options_frame, text="Zoom center y").grid(row=3, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_height,
+            to=self.video_height,
             variable=self.zoom_center_y,
             resolution=1,
             orient=tk.HORIZONTAL,
@@ -254,7 +256,7 @@ class HSVMaskApp(ttk.Frame):
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_width,
+            to=self.video_width,
             variable=self.bbox_x1,
             resolution=1,
             orient=tk.HORIZONTAL,
@@ -266,31 +268,31 @@ class HSVMaskApp(ttk.Frame):
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_height,
+            to=self.video_height,
             variable=self.bbox_y1,
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.render_display,
         ).grid(row=211, column=1)
         self.bbox_x2 = tk.IntVar()
-        self.bbox_x2.set(video_width)
+        self.bbox_x2.set(self.video_width)
         ttk.Label(self.options_frame, text="Bounding Box X2").grid(row=212, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_width,
+            to=self.video_width,
             variable=self.bbox_x2,
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.render_display,
         ).grid(row=212, column=1)
         self.bbox_y2 = tk.IntVar()
-        self.bbox_y2.set(video_height)
+        self.bbox_y2.set(self.video_height)
         ttk.Label(self.options_frame, text="Bounding Box Y2").grid(row=213, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
-            to=video_height,
+            to=self.video_height,
             variable=self.bbox_y2,
             resolution=1,
             orient=tk.HORIZONTAL,
@@ -319,11 +321,11 @@ class HSVMaskApp(ttk.Frame):
             variable=self.draw_mode,
         ).grid(row=222, column=1, sticky="w")
         self.draw_size = tk.IntVar()
-        self.draw_size.set(1)
+        self.draw_size.set(0)
         ttk.Label(self.options_frame, text="Draw radius").grid(row=223, column=0)
         tk.Scale(
             self.options_frame,
-            from_=1,
+            from_=0,
             to=50,
             variable=self.draw_size,
             resolution=1,
@@ -337,12 +339,36 @@ class HSVMaskApp(ttk.Frame):
 
         self.render_display()
 
+    def get_zoom_and_crop(self):
+        zoom_factor = self.zoom_factor.get() / 100
+        zoom_center_x = self.zoom_center_x.get()
+        zoom_center_y = self.zoom_center_y.get()
+        zoom_width = int(self.video_width // zoom_factor)
+        zoom_height = int(self.video_height // zoom_factor)
+        crop_x = np.clip(
+            zoom_center_x - (zoom_width // 2), 0, self.video_width - zoom_width
+        )
+        crop_y = np.clip(
+            zoom_center_y - (zoom_height // 2), 0, self.video_height - zoom_height
+        )
+        return zoom_factor, crop_x, crop_y, zoom_width, zoom_height
+
     def handle_image_click(self, event):
         draw_mode = self.draw_mode.get()
         if draw_mode == DRAW_MODE_NONE:
             return
 
         draw_size = self.draw_size.get()
+
+        # For the target pixel, compute the pixel in the original image.
+        # crop_x and crop_y are the "origin" coordinates for the box in the
+        # original image, so if we divide the scaled coordinates
+        # by the zoom factor and add that to the "origin" coordinates,
+        # we should get the original coordinates.
+        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
+        img_x = int(event.x // zoom_factor) + crop_x
+        img_y = int(event.y // zoom_factor) + crop_y
+
         if draw_mode == DRAW_MODE_EXCLUDE:
             mask = self.exclude_mask
             color = 0
@@ -350,7 +376,7 @@ class HSVMaskApp(ttk.Frame):
             mask = self.include_mask
             color = 255
 
-        cv2.circle(mask, (event.x, event.y), draw_size, color=color, thickness=-1)
+        cv2.circle(mask, (img_x, img_y), draw_size, color=color, thickness=-1)
         self.render_display()
 
     def show_colorchooser(self):
@@ -420,9 +446,6 @@ class HSVMaskApp(ttk.Frame):
     def render_display(self, val=None):
         mask = self._get_mask()
         display_mode = self.display_mode.get()
-        zoom_factor = self.zoom_factor.get()
-        zoom_center_x = self.zoom_center_x.get()
-        zoom_center_y = self.zoom_center_y.get()
         # TODO: Make radius configurable
         radius = 3
 
@@ -437,12 +460,15 @@ class HSVMaskApp(ttk.Frame):
             img = cv2.inpaint(frame_rgb, mask, radius, cv2.INPAINT_TELEA)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
 
-        # Use warpAffine to zoom at a specific location
-        rotation_matrix = cv2.getRotationMatrix2D(
-            (zoom_center_x, zoom_center_y), 0, zoom_factor / 100
-        )
-        img = cv2.warpAffine(
-            img, rotation_matrix, img.shape[1::-1], flags=cv2.INTER_LINEAR
+        # Crop to the specified center, then zoom
+        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
+        img = img[crop_y : crop_y + zoom_height, crop_x : crop_x + zoom_width]
+        img = cv2.resize(
+            img,
+            None,
+            fx=zoom_factor,
+            fy=zoom_factor,
+            interpolation=cv2.INTER_NEAREST,
         )
 
         imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
