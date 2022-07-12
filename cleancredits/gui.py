@@ -1,4 +1,5 @@
 import math
+import pathlib
 import tkinter as tk
 from tkinter import ttk
 
@@ -11,7 +12,7 @@ HSV_MODE_PREVIEW = 'Preview'
 
 
 class HSVMaskApp(ttk.Frame):
-    def __init__(self, parent, cap, start_frame, end_frame, output):
+    def __init__(self, parent, cap, start_frame, end_frame, out_file: pathlib.Path):
         super().__init__(parent)
         self.pack()
 
@@ -24,7 +25,7 @@ class HSVMaskApp(ttk.Frame):
         video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.start_frame = start_frame
         self.end_frame = end_frame
-        self.output = output
+        self.out_file = out_file
 
         # Set up video display
         self.video_frame = ttk.Frame(self, width=video_width, height=video_height, style='Video.TFrame')
@@ -129,15 +130,16 @@ class HSVMaskApp(ttk.Frame):
         self.bbox_y2_scale.grid(row=213, column=1)
         self.bind_scale(self.bbox_y2_scale)
 
+        self.save_button = ttk.Button(self.options_frame, text="Save and quit", command=self.save_and_quit)
+        self.save_button.grid(row=1000, column=0, columnspan=2)
+
         self.show_frame()
 
     def bind_scale(self, scale):
         scale.bind("<ButtonRelease-1>", self.show_frame)
 
-    def show_frame(self, val=None):
-        # TODO: Add radius. Also, dilate?
+    def _get_mask(self):
         current_frame = self.current_frame.get()
-        mode = self.mode.get()
         hue_min = self.hue_min.get()
         hue_max = self.hue_max.get()
         sat_min = self.sat_min.get()
@@ -150,8 +152,6 @@ class HSVMaskApp(ttk.Frame):
         bbox_y1 = self.bbox_y1.get()
         bbox_x2 = self.bbox_x2.get()
         bbox_y2 = self.bbox_y2.get()
-
-        radius = 3
 
         # Set up np arrays for lower/upper bounds for mask range
         hsv_min = np.array([hue_min, sat_min, val_min])
@@ -175,7 +175,13 @@ class HSVMaskApp(ttk.Frame):
         hsv_mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
         # TODO: Combine with base mask in bitwise_or
-        mask = hsv_mask
+        return frame, hsv_mask
+
+    def show_frame(self, val=None):
+        frame, mask = self._get_mask()
+        mode = self.mode.get()
+        # TODO: Make radius configurable
+        radius = 3
 
         # Render the displayed image
         if mode == HSV_MODE_MASKED:
@@ -192,3 +198,7 @@ class HSVMaskApp(ttk.Frame):
         self.video_label.imgtk = imgtk
         self.video_label.configure(image=imgtk)
 
+    def save_and_quit(self):
+        _, mask = self._get_mask()
+        cv2.imwrite(str(self.out_file), mask)
+        self.master.destroy()
