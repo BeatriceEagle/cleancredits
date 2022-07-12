@@ -1,7 +1,7 @@
 import math
 import pathlib
 import tkinter as tk
-from tkinter import ttk
+from tkinter import colorchooser, ttk
 
 import cv2
 import numpy as np
@@ -10,6 +10,10 @@ from PIL import Image, ImageTk
 HSV_MODE_UNMASKED = "Unmasked"
 HSV_MODE_MASKED = "Masked"
 HSV_MODE_PREVIEW = "Preview"
+
+SECTION_PADDING = (50, 0)
+
+COLORCHOOSER_FUZZ = 10
 
 
 class HSVMaskApp(ttk.Frame):
@@ -67,38 +71,41 @@ class HSVMaskApp(ttk.Frame):
         self.current_frame_scale.grid(row=0, column=1)
         self.bind_scale(self.current_frame_scale)
 
-        self.mode = tk.StringVar()
-        self.mode.set(HSV_MODE_MASKED)
-        ttk.Label(self.options_frame, text="Mode").grid(row=1, column=0)
+        self.display_mode = tk.StringVar()
+        self.display_mode.set(HSV_MODE_MASKED)
+        ttk.Label(self.options_frame, text="Display mode").grid(row=1, column=0)
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_UNMASKED,
             value=HSV_MODE_UNMASKED,
-            variable=self.mode,
+            variable=self.display_mode,
             command=self.show_frame,
         ).grid(row=1, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_MASKED,
             value=HSV_MODE_MASKED,
-            variable=self.mode,
+            variable=self.display_mode,
             command=self.show_frame,
         ).grid(row=2, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_PREVIEW,
             value=HSV_MODE_PREVIEW,
-            variable=self.mode,
+            variable=self.display_mode,
             command=self.show_frame,
         ).grid(row=3, column=1, sticky="w")
 
         ttk.Label(self.options_frame, text="HSV Selection").grid(
-            row=100, column=0, columnspan=2
+            row=100, column=0, columnspan=2, pady=SECTION_PADDING
         )
+        ttk.Button(
+            self.options_frame, text="Color chooser", command=self.show_colorchooser
+        ).grid(row=101, column=0, columnspan=2)
         # OpenCV hue goes from 0 to 179
         self.hue_min = tk.IntVar()
         self.hue_min.set(0)
-        ttk.Label(self.options_frame, text="Hue Min").grid(row=101, column=0)
+        ttk.Label(self.options_frame, text="Hue Min").grid(row=110, column=0)
         self.hue_min_scale = tk.Scale(
             self.options_frame,
             from_=0,
@@ -107,11 +114,11 @@ class HSVMaskApp(ttk.Frame):
             resolution=1,
             orient=tk.HORIZONTAL,
         )
-        self.hue_min_scale.grid(row=101, column=1)
+        self.hue_min_scale.grid(row=110, column=1)
         self.bind_scale(self.hue_min_scale)
         self.hue_max = tk.IntVar()
         self.hue_max.set(179)
-        ttk.Label(self.options_frame, text="Hue Max").grid(row=102, column=0)
+        ttk.Label(self.options_frame, text="Hue Max").grid(row=111, column=0)
         self.hue_max_scale = tk.Scale(
             self.options_frame,
             from_=0,
@@ -120,13 +127,13 @@ class HSVMaskApp(ttk.Frame):
             resolution=1,
             orient=tk.HORIZONTAL,
         )
-        self.hue_max_scale.grid(row=102, column=1)
+        self.hue_max_scale.grid(row=111, column=1)
         self.bind_scale(self.hue_max_scale)
 
         # Saturation
         self.sat_min = tk.IntVar()
         self.sat_min.set(0)
-        ttk.Label(self.options_frame, text="Sat Min").grid(row=103, column=0)
+        ttk.Label(self.options_frame, text="Sat Min").grid(row=112, column=0)
         self.sat_min_scale = tk.Scale(
             self.options_frame,
             from_=0,
@@ -135,11 +142,11 @@ class HSVMaskApp(ttk.Frame):
             resolution=1,
             orient=tk.HORIZONTAL,
         )
-        self.sat_min_scale.grid(row=103, column=1)
+        self.sat_min_scale.grid(row=112, column=1)
         self.bind_scale(self.sat_min_scale)
         self.sat_max = tk.IntVar()
         self.sat_max.set(255)
-        ttk.Label(self.options_frame, text="Sat Max").grid(row=104, column=0)
+        ttk.Label(self.options_frame, text="Sat Max").grid(row=113, column=0)
         self.sat_max_scale = tk.Scale(
             self.options_frame,
             from_=0,
@@ -148,7 +155,7 @@ class HSVMaskApp(ttk.Frame):
             resolution=1,
             orient=tk.HORIZONTAL,
         )
-        self.sat_max_scale.grid(row=104, column=1)
+        self.sat_max_scale.grid(row=113, column=1)
         self.bind_scale(self.sat_max_scale)
 
         # Value
@@ -180,7 +187,7 @@ class HSVMaskApp(ttk.Frame):
         self.bind_scale(self.val_max_scale)
 
         ttk.Label(self.options_frame, text="Mask alteration").grid(
-            row=200, column=0, columnspan=2
+            row=200, column=0, columnspan=2, pady=SECTION_PADDING
         )
         self.grow = tk.IntVar()
         self.grow.set(0)
@@ -259,6 +266,20 @@ class HSVMaskApp(ttk.Frame):
     def bind_scale(self, scale):
         scale.bind("<ButtonRelease-1>", self.show_frame)
 
+    def show_colorchooser(self):
+        color = colorchooser.askcolor()
+        if color is not None:
+            pixel = np.array([[color[0]]], np.uint8)
+            pixel_hsv = cv2.cvtColor(pixel, cv2.COLOR_RGB2HSV)
+            hue, sat, val = pixel_hsv[0][0]
+            self.hue_min.set(hue - COLORCHOOSER_FUZZ)
+            self.hue_max.set(hue + COLORCHOOSER_FUZZ)
+            self.sat_min.set(sat - COLORCHOOSER_FUZZ)
+            self.sat_max.set(sat + COLORCHOOSER_FUZZ)
+            self.val_min.set(val - COLORCHOOSER_FUZZ)
+            self.val_max.set(val + COLORCHOOSER_FUZZ)
+            self.show_frame()
+
     def _get_mask(self):
         current_frame = self.current_frame.get()
         hue_min = self.hue_min.get()
@@ -302,14 +323,14 @@ class HSVMaskApp(ttk.Frame):
 
     def show_frame(self, val=None):
         frame, mask = self._get_mask()
-        mode = self.mode.get()
+        display_mode = self.display_mode.get()
         # TODO: Make radius configurable
         radius = 3
 
         # Render the displayed image
-        if mode == HSV_MODE_UNMASKED:
+        if display_mode == HSV_MODE_UNMASKED:
             img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
-        elif mode == HSV_MODE_MASKED:
+        elif display_mode == HSV_MODE_MASKED:
             img = cv2.bitwise_and(frame, frame, mask=mask)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
         else:
