@@ -487,10 +487,11 @@ class HSVMaskApp(ttk.Frame):
 
         bbox_mask = np.zeros(hsv_mask.shape, np.uint8)
         bbox_mask[bbox_y1:bbox_y2, bbox_x1:bbox_x2] = 255
-        hsv_mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
+        mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
         # Combine with base mask in bitwise_or
-        mask = cv2.bitwise_or(hsv_mask, self.input_mask)
+        if self.input_mask:
+            mask = cv2.bitwise_or(mask, self.input_mask)
 
         # Combine with include/exclude masks
         _, include_mask = cv2.threshold(self.draw_mask, 128, 255, cv2.THRESH_BINARY)

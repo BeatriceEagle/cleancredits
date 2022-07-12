@@ -66,7 +66,8 @@ def generate_hsv_mask(video, start, end, input_mask, output):
     root.geometry(f"{video_width + options_size}x{video_height}+0+0")
     root.minsize(video_width + options_size, video_height)
 
-    input_mask = pathlib.Path(input_mask)
+    if input_mask:
+        input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
     app = HSVMaskApp(root, cap, start_frame, end_frame, out_file, input_mask)
     app.mainloop()
