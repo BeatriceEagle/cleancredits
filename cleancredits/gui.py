@@ -86,30 +86,67 @@ class HSVMaskApp(ttk.Frame):
         self.current_frame_scale.grid(row=0, column=1)
         handle_scale_release(self.current_frame_scale, self.handle_frame_change)
 
+        self.zoom_factor = tk.IntVar()
+        self.zoom_factor.set(100)
+        ttk.Label(self.options_frame, text="Zoom").grid(row=1, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=100,
+            to=500,
+            variable=self.zoom_factor,
+            resolution=25,
+            orient=tk.HORIZONTAL,
+            command=self.render_display,
+        ).grid(row=1, column=1)
+        self.zoom_center_x = tk.IntVar()
+        self.zoom_center_x.set(video_width // 2)
+        ttk.Label(self.options_frame, text="Zoom center x").grid(row=2, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=video_width,
+            variable=self.zoom_center_x,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.render_display,
+        ).grid(row=2, column=1)
+        self.zoom_center_y = tk.IntVar()
+        self.zoom_center_y.set(video_height // 2)
+        ttk.Label(self.options_frame, text="Zoom center y").grid(row=3, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=video_height,
+            variable=self.zoom_center_y,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.render_display,
+        ).grid(row=3, column=1)
+
         self.display_mode = tk.StringVar()
         self.display_mode.set(HSV_MODE_MASKED)
-        ttk.Label(self.options_frame, text="Display mode").grid(row=1, column=0)
+        ttk.Label(self.options_frame, text="Display mode").grid(row=10, column=0)
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_UNMASKED,
             value=HSV_MODE_UNMASKED,
             variable=self.display_mode,
             command=self.render_display,
-        ).grid(row=1, column=1, sticky="w")
+        ).grid(row=10, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_MASKED,
             value=HSV_MODE_MASKED,
             variable=self.display_mode,
             command=self.render_display,
-        ).grid(row=2, column=1, sticky="w")
+        ).grid(row=11, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_PREVIEW,
             value=HSV_MODE_PREVIEW,
             variable=self.display_mode,
             command=self.render_display,
-        ).grid(row=3, column=1, sticky="w")
+        ).grid(row=12, column=1, sticky="w")
 
         ttk.Label(self.options_frame, text="HSV Selection").grid(
             row=100, column=0, columnspan=2, **SECTION_PADDING
@@ -383,6 +420,9 @@ class HSVMaskApp(ttk.Frame):
     def render_display(self, val=None):
         mask = self._get_mask()
         display_mode = self.display_mode.get()
+        zoom_factor = self.zoom_factor.get()
+        zoom_center_x = self.zoom_center_x.get()
+        zoom_center_y = self.zoom_center_y.get()
         # TODO: Make radius configurable
         radius = 3
 
@@ -396,6 +436,14 @@ class HSVMaskApp(ttk.Frame):
             frame_rgb = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGB)
             img = cv2.inpaint(frame_rgb, mask, radius, cv2.INPAINT_TELEA)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+
+        # Use warpAffine to zoom at a specific location
+        rotation_matrix = cv2.getRotationMatrix2D(
+            (zoom_center_x, zoom_center_y), 0, zoom_factor / 100
+        )
+        img = cv2.warpAffine(
+            img, rotation_matrix, img.shape[1::-1], flags=cv2.INTER_LINEAR
+        )
 
         imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
         # Prevent garbage collection
