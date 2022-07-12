@@ -19,6 +19,7 @@ COLORCHOOSER_FUZZ = 10
 DRAW_MODE_NONE = "None"
 DRAW_MODE_EXCLUDE = "Exclude"
 DRAW_MODE_INCLUDE = "Include"
+DRAW_MODE_RESET = "Reset"
 
 
 def handle_scale_release(scale, callback):
@@ -52,10 +53,7 @@ class HSVMaskApp(ttk.Frame):
         if input_mask:
             self.input_mask = cv2.imread(str(input_mask))
             self.input_mask = cv2.cvtColor(self.input_mask, cv2.COLOR_BGR2GRAY)
-        self.include_mask = np.zeros((self.video_height, self.video_width), np.uint8)
-        self.exclude_mask = np.full(
-            (self.video_height, self.video_width), 255, np.uint8
-        )
+        self.draw_mask = np.full((self.video_height, self.video_width), 127, np.uint8)
 
         # Set up video display
         self.video_frame = ttk.Frame(
@@ -324,9 +322,16 @@ class HSVMaskApp(ttk.Frame):
             variable=self.draw_mode,
             command=self.handle_draw_mode,
         ).grid(row=222, column=1, sticky="w")
+        ttk.Radiobutton(
+            self.options_frame,
+            text=DRAW_MODE_RESET,
+            value=DRAW_MODE_RESET,
+            variable=self.draw_mode,
+            command=self.handle_draw_mode,
+        ).grid(row=223, column=1, sticky="w")
         self.draw_size = tk.IntVar()
         self.draw_size.set(1)
-        ttk.Label(self.options_frame, text="Draw size").grid(row=223, column=0)
+        ttk.Label(self.options_frame, text="Draw size").grid(row=224, column=0)
         tk.Scale(
             self.options_frame,
             from_=1,
@@ -334,7 +339,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.draw_size,
             resolution=1,
             orient=tk.HORIZONTAL,
-        ).grid(row=223, column=1)
+        ).grid(row=224, column=1)
         self.draw_prev = None
 
         self.save_button = ttk.Button(
@@ -403,13 +408,14 @@ class HSVMaskApp(ttk.Frame):
         draw_prev = self.draw_prev or pt
 
         if draw_mode == DRAW_MODE_EXCLUDE:
-            mask = self.exclude_mask
             color = 0
+        elif draw_mode == DRAW_MODE_RESET:
+            color = 127
         else:
-            mask = self.include_mask
+            # DRAW_MODE_INCLUDE
             color = 255
 
-        cv2.line(mask, draw_prev, pt, color, draw_size)
+        cv2.line(self.draw_mask, draw_prev, pt, color, draw_size)
         self.draw_prev = pt
 
         self._cache_mask()
@@ -487,8 +493,10 @@ class HSVMaskApp(ttk.Frame):
         mask = cv2.bitwise_or(hsv_mask, self.input_mask)
 
         # Combine with include/exclude masks
-        mask = cv2.bitwise_or(mask, self.include_mask)
-        mask = cv2.bitwise_and(mask, self.exclude_mask)
+        _, include_mask = cv2.threshold(self.draw_mask, 128, 255, cv2.THRESH_BINARY)
+        mask = cv2.bitwise_or(mask, include_mask)
+        _, exclude_mask = cv2.threshold(self.draw_mask, 126, 255, cv2.THRESH_BINARY)
+        mask = cv2.bitwise_and(mask, exclude_mask)
 
         self._mask = mask
 
