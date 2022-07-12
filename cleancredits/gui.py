@@ -153,7 +153,7 @@ class HSVMaskApp(ttk.Frame):
             row=100, column=0, columnspan=2, **SECTION_PADDING
         )
         ttk.Button(
-            self.options_frame, text="Color chooser", command=self.show_colorchooser
+            self.options_frame, text="Color chooser", command=self.handle_colorchooser
         ).grid(row=101, column=0, columnspan=2)
         # OpenCV hue goes from 0 to 179
         self.hue_min = tk.IntVar()
@@ -423,7 +423,7 @@ class HSVMaskApp(ttk.Frame):
         self._cache_display()
         self.render()
 
-    def show_colorchooser(self):
+    def handle_colorchooser(self):
         color = colorchooser.askcolor()
         if color is not None:
             pixel = np.array([[color[0]]], np.uint8)
@@ -435,8 +435,7 @@ class HSVMaskApp(ttk.Frame):
             self.sat_max.set(sat + COLORCHOOSER_FUZZ)
             self.val_min.set(val - COLORCHOOSER_FUZZ)
             self.val_max.set(val + COLORCHOOSER_FUZZ)
-            self._cache_display()
-            self.render()
+            self.handle_mask_change()
 
     def _select_frame(self):
         selected_frame_num = self.selected_frame_num.get()
