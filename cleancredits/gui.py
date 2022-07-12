@@ -12,7 +12,15 @@ HSV_MODE_PREVIEW = "Preview"
 
 
 class HSVMaskApp(ttk.Frame):
-    def __init__(self, parent, cap, start_frame, end_frame, out_file: pathlib.Path):
+    def __init__(
+        self,
+        parent,
+        cap,
+        start_frame,
+        end_frame,
+        out_file: pathlib.Path,
+        input_mask: pathlib.Path = None,
+    ):
         super().__init__(parent)
         self.pack()
 
@@ -26,6 +34,9 @@ class HSVMaskApp(ttk.Frame):
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.out_file = out_file
+        self.input_mask = None
+        if input_mask:
+            self.input_mask = cv2.imread(str(input_mask), cv2.IMREAD_GRAYSCALE)
 
         # Set up video display
         self.video_frame = ttk.Frame(
@@ -276,8 +287,10 @@ class HSVMaskApp(ttk.Frame):
         bbox_mask[bbox_y1:bbox_y2, bbox_x1:bbox_x2] = 255
         hsv_mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
-        # TODO: Combine with base mask in bitwise_or
-        return frame, hsv_mask
+        # Combine with base mask in bitwise_or
+        mask = cv2.bitwise_or(hsv_mask, self.input_mask)
+
+        return frame, mask
 
     def show_frame(self, val=None):
         frame, mask = self._get_mask()

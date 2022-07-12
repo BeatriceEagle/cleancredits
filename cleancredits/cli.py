@@ -30,13 +30,20 @@ def cli():
     "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
+    "-i",
+    "--input",
+    "input_mask",
+    help="Input mask. These pixels will always be present in the output mask.",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True)
+)
+@click.option(
     "-o",
     "--output",
     help="Output mask to this location",
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     required=True,
 )
-def generate_hsv_mask(video, start, end, output):
+def generate_hsv_mask(video, start, end, input_mask, output):
     cap = cv2.VideoCapture(video)
     video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -51,7 +58,9 @@ def generate_hsv_mask(video, start, end, output):
     root.geometry(f'{video_width + options_size}x{video_height}+0+0')
     root.minsize(video_width+options_size, video_height)
 
-    app = HSVMaskApp(root, cap, start_frame, end_frame, output)
+    input_mask = pathlib.Path(input_mask)
+    out_file = pathlib.Path(output)
+    app = HSVMaskApp(root, cap, start_frame, end_frame, out_file, input_mask)
     app.mainloop()
 
 
