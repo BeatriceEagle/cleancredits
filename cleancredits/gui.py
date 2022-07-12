@@ -1,3 +1,4 @@
+import copy
 import math
 import pathlib
 import tkinter as tk
@@ -63,8 +64,9 @@ class HSVMaskApp(ttk.Frame):
         self.video_frame.grid(row=0, column=0, sticky="nw")
         self.display = ttk.Label(self.video_frame)
         self.display.grid(row=0, column=0, sticky="nw")
-        self.display.bind("<Button-1>", self.handle_image_click)
-        self.display.bind("<B1-Motion>", self.handle_image_click)
+        self.display.bind("<Motion>", self.handle_display_motion)
+        self.display.bind("<Button-1>", self.handle_display_click)
+        self.display.bind("<B1-Motion>", self.handle_display_click)
 
         self.options_frame = ttk.Frame(self, style="Options.TFrame")
         self.options_frame.grid(row=0, column=1, sticky="n")
@@ -83,8 +85,6 @@ class HSVMaskApp(ttk.Frame):
             resolution=1,
             orient=tk.HORIZONTAL,
         )
-        # Load first frame
-        self._select_frame()
         self.current_frame_scale.grid(row=0, column=1)
         handle_scale_release(self.current_frame_scale, self.handle_frame_change)
 
@@ -98,7 +98,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.zoom_factor,
             resolution=25,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.render,
         ).grid(row=1, column=1)
         self.zoom_center_x = tk.IntVar()
         self.zoom_center_x.set(self.video_width // 2)
@@ -110,7 +110,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.zoom_center_x,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.render,
         ).grid(row=2, column=1)
         self.zoom_center_y = tk.IntVar()
         self.zoom_center_y.set(self.video_height // 2)
@@ -122,7 +122,7 @@ class HSVMaskApp(ttk.Frame):
             variable=self.zoom_center_y,
             resolution=1,
             orient=tk.HORIZONTAL,
-            command=self.render_display,
+            command=self.render,
         ).grid(row=3, column=1)
 
         self.display_mode = tk.StringVar()
@@ -133,21 +133,21 @@ class HSVMaskApp(ttk.Frame):
             text=HSV_MODE_UNMASKED,
             value=HSV_MODE_UNMASKED,
             variable=self.display_mode,
-            command=self.render_display,
+            command=self.handle_display_change,
         ).grid(row=10, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_MASKED,
             value=HSV_MODE_MASKED,
             variable=self.display_mode,
-            command=self.render_display,
+            command=self.handle_display_change,
         ).grid(row=11, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=HSV_MODE_PREVIEW,
             value=HSV_MODE_PREVIEW,
             variable=self.display_mode,
-            command=self.render_display,
+            command=self.handle_display_change,
         ).grid(row=12, column=1, sticky="w")
 
         ttk.Label(self.options_frame, text="HSV Selection").grid(
@@ -307,18 +307,21 @@ class HSVMaskApp(ttk.Frame):
             text=DRAW_MODE_NONE,
             value=DRAW_MODE_NONE,
             variable=self.draw_mode,
+            command=self.handle_draw_mode,
         ).grid(row=220, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_INCLUDE,
             value=DRAW_MODE_INCLUDE,
             variable=self.draw_mode,
+            command=self.handle_draw_mode,
         ).grid(row=221, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_EXCLUDE,
             value=DRAW_MODE_EXCLUDE,
             variable=self.draw_mode,
+            command=self.handle_draw_mode,
         ).grid(row=222, column=1, sticky="w")
         self.draw_size = tk.IntVar()
         self.draw_size.set(0)
@@ -337,8 +340,15 @@ class HSVMaskApp(ttk.Frame):
         )
         self.save_button.grid(row=1000, column=0, columnspan=2, **SECTION_PADDING)
 
-        self._cache_mask()
-        self.render_display()
+        # First render is basically a frame change.
+        self.handle_frame_change()
+
+    def handle_draw_mode(self):
+        draw_mode = self.draw_mode.get()
+        if draw_mode == DRAW_MODE_NONE:
+            self.display.config(cursor="")
+        else:
+            self.display.config(cursor="none")
 
     def get_zoom_and_crop(self):
         zoom_factor = self.zoom_factor.get() / 100
@@ -354,11 +364,7 @@ class HSVMaskApp(ttk.Frame):
         )
         return zoom_factor, crop_x, crop_y, zoom_width, zoom_height
 
-    def handle_image_click(self, event):
-        draw_mode = self.draw_mode.get()
-        if draw_mode == DRAW_MODE_NONE:
-            return
-
+    def _draw(self, img, x, y, color, filled=True):
         draw_size = self.draw_size.get()
 
         # For the target pixel, compute the pixel in the original image.
@@ -367,8 +373,26 @@ class HSVMaskApp(ttk.Frame):
         # by the zoom factor and add that to the "origin" coordinates,
         # we should get the original coordinates.
         zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
-        img_x = int(event.x // zoom_factor) + crop_x
-        img_y = int(event.y // zoom_factor) + crop_y
+        img_x = int(x // zoom_factor) + crop_x
+        img_y = int(y // zoom_factor) + crop_y
+
+        thickness = -1 if filled else 1
+        cv2.circle(img, (img_x, img_y), draw_size, color=color, thickness=thickness)
+
+    def handle_display_motion(self, event):
+        draw_mode = self.draw_mode.get()
+        if draw_mode == DRAW_MODE_NONE:
+            return
+
+        img = self._display.copy()
+        color = [200, 200, 200]
+        self._draw(img, x=event.x, y=event.y, color=color, filled=False)
+        self.render(img=img)
+
+    def handle_display_click(self, event):
+        draw_mode = self.draw_mode.get()
+        if draw_mode == DRAW_MODE_NONE:
+            return
 
         if draw_mode == DRAW_MODE_EXCLUDE:
             mask = self.exclude_mask
@@ -377,9 +401,11 @@ class HSVMaskApp(ttk.Frame):
             mask = self.include_mask
             color = 255
 
-        cv2.circle(mask, (img_x, img_y), draw_size, color=color, thickness=-1)
+        self._draw(mask, x=event.x, y=event.y, color=color, filled=True)
+
         self._cache_mask()
-        self.render_display()
+        self._cache_display()
+        self.render()
 
     def show_colorchooser(self):
         color = colorchooser.askcolor()
@@ -393,7 +419,8 @@ class HSVMaskApp(ttk.Frame):
             self.sat_max.set(sat + COLORCHOOSER_FUZZ)
             self.val_min.set(val - COLORCHOOSER_FUZZ)
             self.val_max.set(val + COLORCHOOSER_FUZZ)
-            self.render_display()
+            self._cache_display()
+            self.render()
 
     def _select_frame(self):
         selected_frame_num = self.selected_frame_num.get()
@@ -405,11 +432,17 @@ class HSVMaskApp(ttk.Frame):
     def handle_frame_change(self, val=None):
         self._select_frame()
         self._cache_mask()
-        self.render_display()
+        self._cache_display()
+        self.render()
 
     def handle_mask_change(self, val=None):
         self._cache_mask()
-        self.render_display()
+        self._cache_display()
+        self.render()
+
+    def handle_display_change(self, val=None):
+        self._cache_display()
+        self.render()
 
     def _cache_mask(self):
         hue_min = self.hue_min.get()
@@ -450,7 +483,7 @@ class HSVMaskApp(ttk.Frame):
 
         self._mask = mask
 
-    def render_display(self, val=None):
+    def _cache_display(self):
         display_mode = self.display_mode.get()
         # TODO: Make radius configurable
         radius = 3
@@ -467,6 +500,12 @@ class HSVMaskApp(ttk.Frame):
             frame_rgb = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGB)
             img = cv2.inpaint(frame_rgb, self._mask, radius, cv2.INPAINT_TELEA)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+
+        self._display = img
+
+    def render(self, val=None, img=None):
+        if img is None:
+            img = self._display
 
         # Crop to the specified center, then zoom
         zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
