@@ -7,12 +7,12 @@ import tkinter as tk
 import click
 import cv2
 
-from .helpers import clean_frames, join_frames, split_frames
 from .gui import HSVMaskApp
+from .helpers import clean_frames, join_frames, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
-
 DEFAULT_RADIUS = 3
+
 
 @click.group()
 def cli():
@@ -24,17 +24,23 @@ def cli():
     "video", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
 )
 @click.option(
-    "-s", "--start", help="Start timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
+    "-s",
+    "--start",
+    help="Start timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
 )
 @click.option(
-    "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
+    "-e",
+    "--end",
+    help="End timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
 )
 @click.option(
     "-i",
     "--input",
     "input_mask",
     help="Input mask. These pixels will always be present in the output mask.",
-    type=click.Path(exists=True, dir_okay=False, resolve_path=True)
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
 )
 @click.option(
     "-o",
@@ -49,14 +55,16 @@ def generate_hsv_mask(video, start, end, input_mask, output):
     video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_frame = timecode_to_frame(start, fps, default=0)
-    end_frame = timecode_to_frame(end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1)
+    end_frame = timecode_to_frame(
+        end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    )
 
     root = tk.Tk()
-    root.title('HSV Mask')
+    root.title("HSV Mask")
 
     options_size = 300
-    root.geometry(f'{video_width + options_size}x{video_height}+0+0')
-    root.minsize(video_width+options_size, video_height)
+    root.geometry(f"{video_width + options_size}x{video_height}+0+0")
+    root.minsize(video_width + options_size, video_height)
 
     input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
