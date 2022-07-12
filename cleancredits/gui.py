@@ -491,7 +491,7 @@ class HSVMaskApp(ttk.Frame):
         mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
         # Combine with base mask in bitwise_or
-        if self.input_mask:
+        if self.input_mask is not None:
             mask = cv2.bitwise_or(mask, self.input_mask)
 
         # Combine with include/exclude masks
