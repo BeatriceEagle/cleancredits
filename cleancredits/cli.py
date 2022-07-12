@@ -103,9 +103,9 @@ def generate_hsv_mask(video, start, end, input_mask, output):
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
 )
 def clean(video, mask, start, end, radius, framerate, output):
+    cap = cv2.VideoCapture(video)
     if not framerate:
         # Default to the input video's framerate
-        cap = cv2.VideoCapture(video)
         framerate = cap.get(cv2.CAP_PROP_FPS)
 
     video_file = pathlib.Path(video)
@@ -124,7 +124,17 @@ def clean(video, mask, start, end, radius, framerate, output):
     output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
 
-    split_frames(video_file, clip_folder, start=start, end=end)
+    start_frame = timecode_to_frame(start, fps=framerate, default=0)
+    end_frame = timecode_to_frame(
+        end, fps=framerate, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    )
+
+    split_frames(
+        video_file,
+        clip_folder,
+        start=f"{start_frame / framerate}s",
+        end=f"{end_frame / framerate}s",
+    )
     clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
