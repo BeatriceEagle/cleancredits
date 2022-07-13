@@ -1,18 +1,39 @@
-cleancredits
-============
+# cleancredits
+
 
 A very simple tool for removing on-screen text from video, using a user-provided mask.
 
-Installation
-============
+## Installation
 
 ```bash
 pip install -U pip
 pip install cleancredits
 ```
 
-Usage
-=====
+## Usage
+
+### Generate HSV mask
+
+```bash
+cleancredits generate-hsv-mask [OPTIONS] VIDEO
+```
+
+Options:
+
+```
+-s, --start TIMECODE  Start timecode (HH:MM:SS[:frame]) in the input video
+-e, --end TIMECODE    End timecode (HH:MM:SS[:frame]) in the input video
+-i, --input FILE      Input mask. These pixels will always be present in the
+                      output mask (unless explicitly excluded).
+-o, --output FILE     Output mask to this location  [required]
+--help                Show this message and exit.
+```
+
+This command will display a graphical interface for modifying a mask that allows isolating part of an image based on hue / saturation / value, as well as a bounding box. You can also manually add or exclude parts of an image.
+
+You can layer combine masks for multiple colors or areas of credits by outputting a mask, then passing that as an `--input` to the generate-hsv-mask command.
+
+### Clean credits
 
 ```bash
 cleancredits [OPTIONS] VIDEO MASK
@@ -25,7 +46,7 @@ Arguments:
 
 Options:
 
-- `--start/--end`: The start/end timecodes to process from the input video. Default: Start and end of the input video.
+- `--start/--end`: The start/end timecodes (HH:MM:SS[:frame]) to process from the input video. Default: Start and end of the input video.
 
 - `--radius`: The number of pixels the inpaint algorithm uses for interpolation. The default is 3, and this generally gives good results, but if you want to experiment, go wild.
 
@@ -41,8 +62,7 @@ Example:
 cleancredits video.mkv mask.png -o output.mp4
 ```
 
-Output
-======
+Output:
 
 A folder containing all the cleaned frames of the video, and the cleaned
 video.
