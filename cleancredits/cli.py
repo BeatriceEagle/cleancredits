@@ -39,7 +39,7 @@ def cli():
     "-i",
     "--input",
     "input_mask",
-    help="Input mask. These pixels will always be present in the output mask.",
+    help="Input mask. These pixels will always be present in the output mask (unless explicitly excluded).",
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
 )
 @click.option(
