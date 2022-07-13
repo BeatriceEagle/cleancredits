@@ -79,10 +79,10 @@ def generate_hsv_mask(video, start, end, input_mask, output):
 )
 @click.argument("mask", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.option(
-    "-s", "--start", help="Start timecode (HH:MM:SS) in the input video", type=TIMECODE
+    "-s", "--start", help="Start timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
-    "-e", "--end", help="End timecode (HH:MM:SS) in the input video", type=TIMECODE
+    "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
     "-r",
