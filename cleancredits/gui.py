@@ -424,9 +424,10 @@ class HSVMaskApp(ttk.Frame):
         self.render()
 
     def handle_colorchooser(self):
-        color = colorchooser.askcolor()
+        # askcolor returns ((r, g, b), hex)
+        color, _ = colorchooser.askcolor()
         if color is not None:
-            pixel = np.array([[color[0]]], np.uint8)
+            pixel = np.array([[color]], np.uint8)
             pixel_hsv = cv2.cvtColor(pixel, cv2.COLOR_RGB2HSV)
             hue, sat, val = pixel_hsv[0][0]
             self.hue_min.set(hue - COLORCHOOSER_FUZZ)
