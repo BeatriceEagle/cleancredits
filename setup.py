@@ -25,6 +25,7 @@ REQUIRED = [
     "click>=8.1,<9.0",
     "ffmpeg-python>=0.2,<1.0",
     "opencv-python",
+    "Pillow",
 ]
 
 # What packages are optional?

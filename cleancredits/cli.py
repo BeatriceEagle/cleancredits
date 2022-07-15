@@ -2,57 +2,87 @@ import os
 import pathlib
 import re
 import shutil
+import tkinter as tk
 
 import click
 import cv2
 
+from .gui import HSVMaskApp
 from .helpers import clean_frames, join_frames, split_frames
+from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
-VALID_TIMECODE_RE = re.compile(r"^\d\d:\d\d:\d\d(\.\d+)?$")
-VALID_FRAMERATE_RE = re.compile(r"^\d+(?:/\d+)?$")
 DEFAULT_RADIUS = 3
 
 
-class TimecodeParamType(click.ParamType):
-    name = "timecode"
-
-    def convert(self, value, param, ctx):
-        if isinstance(value, str) and VALID_TIMECODE_RE.match(value):
-            return value
-        self.fail(f"{value!r} must be a timecode in the format HH:MM:SS", param, ctx)
+@click.group()
+def cli():
+    pass
 
 
-TIMECODE = TimecodeParamType()
+@cli.command()
+@click.argument(
+    "video", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
+)
+@click.option(
+    "-s",
+    "--start",
+    help="Start timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
+)
+@click.option(
+    "-e",
+    "--end",
+    help="End timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
+)
+@click.option(
+    "-i",
+    "--input",
+    "input_mask",
+    help="Input mask. These pixels will always be present in the output mask (unless explicitly excluded).",
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+)
+@click.option(
+    "-o",
+    "--output",
+    help="Output mask to this location",
+    type=click.Path(dir_okay=False, writable=True, resolve_path=True),
+    required=True,
+)
+def generate_hsv_mask(video, start, end, input_mask, output):
+    cap = cv2.VideoCapture(video)
+    video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    start_frame = timecode_to_frame(start, fps, default=0)
+    end_frame = timecode_to_frame(
+        end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    )
+
+    root = tk.Tk()
+    root.title("HSV Mask")
+
+    options_size = 300
+    root.geometry(f"{video_width + options_size}x{video_height}+0+0")
+    root.minsize(video_width + options_size, video_height)
+
+    if input_mask:
+        input_mask = pathlib.Path(input_mask)
+    out_file = pathlib.Path(output)
+    app = HSVMaskApp(root, cap, start_frame, end_frame, out_file, input_mask)
+    app.mainloop()
 
 
-class FramerateParamType(click.ParamType):
-    name = "framerate"
-
-    def convert(self, value, param, ctx):
-        if isinstance(value, str) and VALID_FRAMERATE_RE.match(value):
-            return value
-        if isinstance(value, int):
-            return str(value)
-        self.fail(
-            f"{value!r} must be a framerate expressed as an integer or ratio of integers (for example 24000/1001 for 23.976fps)",
-            param,
-            ctx,
-        )
-
-
-FRAMERATE = FramerateParamType()
-
-
-@click.command()
+@cli.command()
 @click.argument(
     "video", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
 )
 @click.argument("mask", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.option(
-    "-s", "--start", help="Start timecode (HH:MM:SS) in the input video", type=TIMECODE
+    "-s", "--start", help="Start timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
-    "-e", "--end", help="End timecode (HH:MM:SS) in the input video", type=TIMECODE
+    "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
 )
 @click.option(
     "-r",
@@ -72,10 +102,10 @@ FRAMERATE = FramerateParamType()
     help="Convert frames to video and output to this location if set",
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
 )
-def cli(video, mask, start, end, radius, framerate, output):
+def clean(video, mask, start, end, radius, framerate, output):
+    cap = cv2.VideoCapture(video)
     if not framerate:
         # Default to the input video's framerate
-        cap = cv2.VideoCapture(video)
         framerate = cap.get(cv2.CAP_PROP_FPS)
 
     video_file = pathlib.Path(video)
@@ -94,9 +124,19 @@ def cli(video, mask, start, end, radius, framerate, output):
     output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
 
-    split_frames(video_file, clip_folder, start=start, end=end)
+    start_frame = timecode_to_frame(start, fps=framerate, default=0)
+    end_frame = timecode_to_frame(
+        end, fps=framerate, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+    )
+
+    split_frames(
+        video_file,
+        clip_folder,
+        start=f"{start_frame / framerate}s",
+        end=f"{end_frame / framerate}s",
+    )
     clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
-        output_file = pathlib.Path(output)
-        join_frames(output_clip_folder, output_file, framerate)
+        out_file = pathlib.Path(output)
+        join_frames(output_clip_folder, out_file, framerate)
