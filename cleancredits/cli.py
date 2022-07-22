@@ -19,7 +19,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(help="Generate a mask based on a video clip")
 @click.argument(
     "video", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
 )
@@ -49,7 +49,7 @@ def cli():
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     required=True,
 )
-def generate_hsv_mask(video, start, end, input_mask, output):
+def mask(video, start, end, input_mask, output):
     cap = cv2.VideoCapture(video)
     video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -79,10 +79,16 @@ def generate_hsv_mask(video, start, end, input_mask, output):
 )
 @click.argument("mask", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.option(
-    "-s", "--start", help="Start timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
+    "-s",
+    "--start",
+    help="Start timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
 )
 @click.option(
-    "-e", "--end", help="End timecode (HH:MM:SS[:frame]) in the input video", type=TIMECODE
+    "-e",
+    "--end",
+    help="End timecode (HH:MM:SS[:frame]) in the input video",
+    type=TIMECODE,
 )
 @click.option(
     "-r",
