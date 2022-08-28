@@ -15,8 +15,10 @@ pip install cleancredits
 ### Generate HSV mask
 
 ```bash
-cleancredits generate-hsv-mask [OPTIONS] VIDEO
+cleancredits mask [OPTIONS] VIDEO
 ```
+
+Generate a mask based on a video clip
 
 Options:
 
@@ -36,7 +38,7 @@ You can layer combine masks for multiple colors or areas of credits by outputtin
 ### Clean credits
 
 ```bash
-cleancredits [OPTIONS] VIDEO MASK
+cleancredits clean [OPTIONS] VIDEO MASK
 ```
 
 Arguments:
@@ -50,7 +52,7 @@ Options:
 
 - `--radius`: The number of pixels the inpaint algorithm uses for interpolation. The default is 3, and this generally gives good results, but if you want to experiment, go wild.
 
-- `--framerate`: The framerate (fps) of the video being cleaned. The default is 24.
+- `--framerate`: The framerate (fps) of the video being cleaned. The default is the input framerate.
 
 - `--output PATH`: If this flag is selected, the cleaned frames will be remuxed into video and output at the specified `PATH`. You can omit this option if you want to do your own muxing. `cleancredits` muxes video using ffmpeg's libx264 codec and yuv420p colorspace, which in testing were found to give the best quality video while also still being recognizable by most editors and players. Outputting as a `.mp4` file is recommended.
 
@@ -59,7 +61,7 @@ Example:
 ```bash
 # Takes a video.mkv and mask.png from the current directory and outputs
 # output.mp4 to the current directory.
-cleancredits video.mkv mask.png -o output.mp4
+cleancredits clean video.mkv mask.png -o output.mp4
 ```
 
 Output:
