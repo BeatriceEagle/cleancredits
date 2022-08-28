@@ -5,9 +5,17 @@ A very simple tool for removing on-screen text from video, using a user-provided
 
 ## Installation
 
+Install the latest released version:
+
 ```bash
 pip install -U pip
 pip install cleancredits
+```
+
+Or install the latest version from Github:
+
+```bash
+pip install git+https://github.com/BeatriceEagle/cleancredits@main
 ```
 
 ## Usage
