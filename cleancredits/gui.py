@@ -100,7 +100,7 @@ class HSVMaskGUI(object):
 
         # Set up video display
         self.video_frame = ttk.Frame(self.frame, style="Video.TFrame")
-        self.video_frame.pack(side="right", fill="y")
+        self.video_frame.pack(side="right", fill=None, expand=True)
         self.display = ttk.Label(self.video_frame)
         self.display.pack(fill="both", expand=True)
         self.display.bind("<Motion>", self.handle_display_motion)
