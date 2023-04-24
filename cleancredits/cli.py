@@ -48,10 +48,110 @@ def cli():
     type=click.Path(dir_okay=False, writable=True, resolve_path=True),
     required=True,
 )
-def mask(video, start, end, input_mask, output):
+@click.option(
+    "--hue-min",
+    help="Minimum hue",
+    type=click.IntRange(0, 179, clamp=True),
+    default=0,
+)
+@click.option(
+    "--hue-max",
+    help="Maximum hue",
+    type=click.IntRange(0, 179, clamp=True),
+    default=179,
+)
+@click.option(
+    "--sat-min",
+    help="Minimum saturation",
+    type=click.IntRange(0, 255, clamp=True),
+    default=0,
+)
+@click.option(
+    "--sat-max",
+    help="Maximum saturation",
+    type=click.IntRange(0, 255, clamp=True),
+    default=255,
+)
+@click.option(
+    "--val-min",
+    help="Minimum value",
+    type=click.IntRange(0, 255, clamp=True),
+    default=0,
+)
+@click.option(
+    "--val-max",
+    help="Maximum value",
+    type=click.IntRange(0, 255, clamp=True),
+    default=255,
+)
+@click.option(
+    "--grow",
+    help="Grow amount",
+    type=click.IntRange(0, 20, clamp=True),
+    default=0,
+)
+@click.option(
+    "--bbox-x1",
+    help="Bounding box left x",
+    type=click.IntRange(0, clamp=True),
+    default=0,
+)
+@click.option(
+    "--bbox-x2",
+    help="Bounding box right x",
+    type=click.IntRange(0, clamp=True),
+    default=None,
+)
+@click.option(
+    "--bbox-y1",
+    help="Bounding box top y",
+    type=click.IntRange(0, clamp=True),
+    default=0,
+)
+@click.option(
+    "--bbox-y2",
+    help="Bounding box bottom y",
+    type=click.IntRange(0, clamp=True),
+    default=None,
+)
+@click.option(
+    "--gui/--no-gui",
+    help="Set --no-gui to directly render the mask without displaying the GUI",
+    default=True,
+)
+def mask(
+    video,
+    start,
+    end,
+    input_mask,
+    output,
+    hue_min,
+    hue_max,
+    sat_min,
+    sat_max,
+    val_min,
+    val_max,
+    grow,
+    bbox_x1,
+    bbox_x2,
+    bbox_y1,
+    bbox_y2,
+    gui,
+):
     cap = cv2.VideoCapture(video)
     video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    bbox_x1 = min(bbox_x1, video_width)
+    if bbox_x2 is None:
+        bbox_x2 = video_width
+    else:
+        bbox_x2 = min(bbox_x2, video_width)
+    bbox_y1 = min(bbox_y1, video_height)
+    if bbox_y2 is None:
+        bbox_y2 = video_height
+    else:
+        bbox_y2 = min(bbox_y2, video_height)
+
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_frame = timecode_to_frame(start, fps, default=0)
     end_frame = timecode_to_frame(
@@ -61,6 +161,7 @@ def mask(video, start, end, input_mask, output):
     if input_mask:
         input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
+    
     app = HSVMaskGUI(cap, start_frame, end_frame, out_file, input_mask)
     app.mainloop()
 

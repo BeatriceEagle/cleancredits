@@ -34,6 +34,17 @@ class HSVMaskGUI(object):
         start_frame,
         end_frame,
         out_file: pathlib.Path,
+        hue_min: int,
+        hue_max: int,
+        sat_min: int,
+        sat_max: int,
+        val_min: int,
+        val_max: int,
+        grow: int,
+        bbox_x1: int,
+        bbox_x2: int,
+        bbox_y1: int,
+        bbox_y2: int,
         input_mask: pathlib.Path = None,
     ):
         self.options_size = 300
@@ -192,7 +203,7 @@ class HSVMaskGUI(object):
         ).grid(row=101, column=0, columnspan=2)
         # OpenCV hue goes from 0 to 179
         self.hue_min = tk.IntVar()
-        self.hue_min.set(0)
+        self.hue_min.set(hue_min)
         ttk.Label(self.options_frame, text="Hue Min").grid(row=110, column=0)
         tk.Scale(
             self.options_frame,
@@ -204,7 +215,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=110, column=1)
         self.hue_max = tk.IntVar()
-        self.hue_max.set(179)
+        self.hue_max.set(hue_max)
         ttk.Label(self.options_frame, text="Hue Max").grid(row=111, column=0)
         tk.Scale(
             self.options_frame,
@@ -218,7 +229,7 @@ class HSVMaskGUI(object):
 
         # Saturation
         self.sat_min = tk.IntVar()
-        self.sat_min.set(0)
+        self.sat_min.set(sat_min)
         ttk.Label(self.options_frame, text="Sat Min").grid(row=112, column=0)
         tk.Scale(
             self.options_frame,
@@ -230,7 +241,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=112, column=1)
         self.sat_max = tk.IntVar()
-        self.sat_max.set(255)
+        self.sat_max.set(sat_max)
         ttk.Label(self.options_frame, text="Sat Max").grid(row=113, column=0)
         tk.Scale(
             self.options_frame,
@@ -244,7 +255,7 @@ class HSVMaskGUI(object):
 
         # Value
         self.val_min = tk.IntVar()
-        self.val_min.set(0)
+        self.val_min.set(val_min)
         ttk.Label(self.options_frame, text="Val Min").grid(row=105, column=0)
         tk.Scale(
             self.options_frame,
@@ -256,7 +267,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=105, column=1)
         self.val_max = tk.IntVar()
-        self.val_max.set(255)
+        self.val_max.set(val_max)
         ttk.Label(self.options_frame, text="Val Max").grid(row=106, column=0)
         tk.Scale(
             self.options_frame,
@@ -272,7 +283,7 @@ class HSVMaskGUI(object):
             row=200, column=0, columnspan=2, **SECTION_PADDING
         )
         self.grow = tk.IntVar()
-        self.grow.set(0)
+        self.grow.set(grow)
         ttk.Label(self.options_frame, text="Grow").grid(row=201, column=0)
         tk.Scale(
             self.options_frame,
@@ -285,7 +296,7 @@ class HSVMaskGUI(object):
         ).grid(row=201, column=1)
 
         self.bbox_x1 = tk.IntVar()
-        self.bbox_x1.set(0)
+        self.bbox_x1.set(bbox_x1)
         ttk.Label(self.options_frame, text="Bounding Box X1").grid(row=210, column=0)
         tk.Scale(
             self.options_frame,
@@ -297,7 +308,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=210, column=1)
         self.bbox_y1 = tk.IntVar()
-        self.bbox_y1.set(0)
+        self.bbox_y1.set(bbox_y1)
         ttk.Label(self.options_frame, text="Bounding Box Y1").grid(row=211, column=0)
         tk.Scale(
             self.options_frame,
@@ -309,7 +320,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=211, column=1)
         self.bbox_x2 = tk.IntVar()
-        self.bbox_x2.set(self.video_width)
+        self.bbox_x2.set(bbox_x2)
         ttk.Label(self.options_frame, text="Bounding Box X2").grid(row=212, column=0)
         tk.Scale(
             self.options_frame,
@@ -321,7 +332,7 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=212, column=1)
         self.bbox_y2 = tk.IntVar()
-        self.bbox_y2.set(self.video_height)
+        self.bbox_y2.set(bbox_y2)
         ttk.Label(self.options_frame, text="Bounding Box Y2").grid(row=213, column=0)
         tk.Scale(
             self.options_frame,
