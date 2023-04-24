@@ -31,17 +31,31 @@ Generate a mask based on a video clip
 Options:
 
 ```
--s, --start TIMECODE  Start timecode (HH:MM:SS[:frame]) in the input video
--e, --end TIMECODE    End timecode (HH:MM:SS[:frame]) in the input video
--i, --input FILE      Input mask. These pixels will always be present in the
-                      output mask (unless explicitly excluded).
--o, --output FILE     Output mask to this location  [required]
---help                Show this message and exit.
+  -s, --start TIMECODE     Start timecode (HH:MM:SS[:frame]) in the input
+                           video
+  -e, --end TIMECODE       End timecode (HH:MM:SS[:frame]) in the input video
+  -i, --input FILE         Input mask. These pixels will always be present in
+                           the output mask (unless explicitly excluded).
+  -o, --output FILE        Output mask to this location  [required]
+  --hue-min INTEGER RANGE  Minimum hue  [0<=x<=179]
+  --hue-max INTEGER RANGE  Maximum hue  [0<=x<=179]
+  --sat-min INTEGER RANGE  Minimum saturation  [0<=x<=255]
+  --sat-max INTEGER RANGE  Maximum saturation  [0<=x<=255]
+  --val-min INTEGER RANGE  Minimum value  [0<=x<=255]
+  --val-max INTEGER RANGE  Maximum value  [0<=x<=255]
+  --grow INTEGER RANGE     Grow amount  [0<=x<=20]
+  --bbox-x1 INTEGER RANGE  Bounding box left x  [x>=0]
+  --bbox-x2 INTEGER RANGE  Bounding box right x  [x>=0]
+  --bbox-y1 INTEGER RANGE  Bounding box top y  [x>=0]
+  --bbox-y2 INTEGER RANGE  Bounding box bottom y  [x>=0]
+  --gui / --no-gui         Set --no-gui to directly render the mask without
+                           displaying the GUI
+  --help                   Show this message and exit.
 ```
 
 This command will display a graphical interface for modifying a mask that allows isolating part of an image based on hue / saturation / value, as well as a bounding box. You can also manually add or exclude parts of an image.
 
-You can layer combine masks for multiple colors or areas of credits by outputting a mask, then passing that as an `--input` to the generate-hsv-mask command.
+You can layer combine masks for multiple colors or areas of credits by outputting a mask, then passing that as an `--input` to the `mask` command.
 
 ### Clean credits
 
