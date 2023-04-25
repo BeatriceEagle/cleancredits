@@ -1,6 +1,7 @@
 import copy
 import math
 import pathlib
+import sys
 import tkinter as tk
 from tkinter import colorchooser, ttk
 
@@ -26,10 +27,9 @@ def handle_scale_release(scale, callback):
     scale.bind("<ButtonRelease-1>", callback)
 
 
-class HSVMaskApp(ttk.Frame):
+class HSVMaskGUI(object):
     def __init__(
         self,
-        parent,
         cap,
         start_frame,
         end_frame,
@@ -47,12 +47,30 @@ class HSVMaskApp(ttk.Frame):
         bbox_y2: int,
         input_mask: pathlib.Path = None,
     ):
-        super().__init__(parent)
-        self.pack()
+        self.options_size = 300
 
-        self.style = ttk.Style(self)
+        self.root = tk.Tk()
+        self.root.title("HSV Mask")
+        # Get the screen size of the screen the window is currently on.
+        toplevel = tk.Toplevel(self.root)
+        toplevel.geometry(self.root.geometry())
+        toplevel.update_idletasks()
+        toplevel.attributes("-fullscreen", True)
+        toplevel.state("iconic")
+        width, height = toplevel.geometry().split("+")[0].split("x")
+        toplevel.destroy()
+        toplevel.update()
+        self.root.minsize(2 * self.options_size, self.options_size)
+        self.root.maxsize(width, height)
+        self.root.resizable(True, True)
+
+        self.style = ttk.Style()
         self.style.configure("Video.TFrame")
         self.style.configure("Options.TFrame")
+        self.style.configure("Main.TFrame")
+
+        self.frame = ttk.Frame(self.root, style="Main.TFrame")
+        self.frame.pack(fill="both", expand=True)
 
         self.cap = cap
         self.video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -66,23 +84,40 @@ class HSVMaskApp(ttk.Frame):
             self.input_mask = cv2.cvtColor(self.input_mask, cv2.COLOR_BGR2GRAY)
         self.draw_mask = np.full((self.video_height, self.video_width), 127, np.uint8)
 
-        # Set up video display
-        self.video_frame = ttk.Frame(
-            self, width=self.video_width, height=self.video_height, style="Video.TFrame"
+        # Set up options display first so that it will not shrink.
+        self.options_sidebar = ttk.Frame(self.frame, style="Options.TFrame")
+        self.options_sidebar.pack(side="left", fill="y")
+
+        self.options_canvas = tk.Canvas(self.options_sidebar)
+        self.options_canvas.pack(side="left", fill="y")
+        self.options_scrollbar = ttk.Scrollbar(
+            self.options_sidebar, command=self.options_canvas.yview
         )
-        self.video_frame.grid(row=0, column=0, sticky="nw")
+        self.options_scrollbar.pack(side="right", fill="y")
+
+        self.options_frame = ttk.Frame(self.options_canvas)
+        self.options_frame.columnconfigure(0, weight=1)
+        self.options_frame.columnconfigure(1, weight=4)
+        self.options_canvas.create_window(0, 0, window=self.options_frame, anchor=tk.NW)
+        self.options_canvas.configure(yscrollcommand=self.options_scrollbar.set)
+
+        # Change canvas size when widgets are added to the inner frame
+        self.options_frame.bind(
+            "<Configure>",
+            lambda e: self.options_canvas.configure(
+                scrollregion=self.options_canvas.bbox("all")
+            ),
+        )
+
+        # Set up video display
+        self.video_frame = ttk.Frame(self.frame, style="Video.TFrame")
+        self.video_frame.pack(side="right", fill=None, expand=True)
         self.display = ttk.Label(self.video_frame)
-        self.display.grid(row=0, column=0, sticky="nw")
+        self.display.pack(fill="both", expand=True)
         self.display.bind("<Motion>", self.handle_display_motion)
         self.display.bind("<Button-1>", self.handle_display_drag)
         self.display.bind("<B1-Motion>", self.handle_display_drag)
         self.display.bind("<ButtonRelease-1>", self.handle_display_drag)
-
-        self.options_frame = ttk.Frame(self, style="Options.TFrame")
-        self.options_frame.grid(row=0, column=1, sticky="n")
-
-        self.options_frame.columnconfigure(0, weight=1)
-        self.options_frame.columnconfigure(1, weight=4)
 
         self.selected_frame_num = tk.IntVar()
         self.selected_frame_num.set(start_frame)
@@ -103,10 +138,10 @@ class HSVMaskApp(ttk.Frame):
         ttk.Label(self.options_frame, text="Zoom").grid(row=1, column=0)
         tk.Scale(
             self.options_frame,
-            from_=100,
+            from_=1,
             to=500,
             variable=self.zoom_factor,
-            resolution=25,
+            resolution=1,
             orient=tk.HORIZONTAL,
             command=self.render,
         ).grid(row=1, column=1)
@@ -358,8 +393,31 @@ class HSVMaskApp(ttk.Frame):
         )
         self.save_button.grid(row=1000, column=0, columnspan=2, **SECTION_PADDING)
 
+        # Make all options sidebar widgets handle mousewheel events.
+        self.options_sidebar.bind("<MouseWheel>", self.handle_options_mousewheel)
+        self.options_canvas.bind("<MouseWheel>", self.handle_options_mousewheel)
+        self.options_frame.bind("<MouseWheel>", self.handle_options_mousewheel)
+        for child in self.options_frame.children.values():
+            child.bind("<MouseWheel>", self.handle_options_mousewheel)
+
         # First render is basically a frame change.
         self.handle_frame_change()
+
+        # This will give us the actual window size. Now set zoom factor to fit the whole image, then re-render.
+        self.root.update()
+        height_ratio = self.display.winfo_height() / self.video_height
+        width_ratio = self.display.winfo_width() / self.video_width
+        self.zoom_factor.set(int(min(height_ratio, width_ratio) * 100))
+        self.render()
+
+    def mainloop(self):
+        self.root.mainloop()
+
+    def handle_options_mousewheel(self, event):
+        delta = -1 * event.delta
+        if sys.platform != "darwin":
+            delta = delta / 120
+        self.options_canvas.yview_scroll(int(delta), "units")
 
     def handle_draw_mode(self):
         draw_mode = self.draw_mode.get()
@@ -374,11 +432,17 @@ class HSVMaskApp(ttk.Frame):
         zoom_center_y = self.zoom_center_y.get()
         zoom_width = int(self.video_width // zoom_factor)
         zoom_height = int(self.video_height // zoom_factor)
+        # Crop x and y are set at half the zoom width away from the zoom center,
+        # in order to center it. However, the zoom center may be near an edge, so
+        # we need to clip it between 0 and the farthest right point possible that
+        # won't spill over the video width. For zoom out, the crop x and y will be 0.
         crop_x = np.clip(
-            zoom_center_x - (zoom_width // 2), 0, self.video_width - zoom_width
+            zoom_center_x - (zoom_width // 2), 0, max(self.video_width - zoom_width, 0)
         )
         crop_y = np.clip(
-            zoom_center_y - (zoom_height // 2), 0, self.video_height - zoom_height
+            zoom_center_y - (zoom_height // 2),
+            0,
+            max(self.video_height - zoom_height, 0),
         )
         return zoom_factor, crop_x, crop_y, zoom_width, zoom_height
 
@@ -555,4 +619,4 @@ class HSVMaskApp(ttk.Frame):
 
     def save_and_quit(self):
         cv2.imwrite(str(self.out_file), self._mask)
-        self.master.destroy()
+        self.root.destroy()

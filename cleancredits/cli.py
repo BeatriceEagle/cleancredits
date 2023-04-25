@@ -2,12 +2,11 @@ import os
 import pathlib
 import re
 import shutil
-import tkinter as tk
 
 import click
 import cv2
 
-from .gui import HSVMaskApp
+from .gui import HSVMaskGUI
 from .helpers import clean_frames, join_frames, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
@@ -159,42 +158,12 @@ def mask(
         end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
     )
 
-    root = tk.Tk()
-    root.title("HSV Mask")
-
-    options_size = 300
-    root.geometry(f"{video_width + options_size}x{video_height}+0+0")
-    root.minsize(video_width + options_size, video_height)
-
     if input_mask:
         input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
-    app = HSVMaskApp(
-        root,
-        cap,
-        start_frame,
-        end_frame,
-        out_file,
-        hue_min,
-        hue_max,
-        sat_min,
-        sat_max,
-        val_min,
-        val_max,
-        grow,
-        bbox_x1,
-        bbox_x2,
-        bbox_y1,
-        bbox_y2,
-        input_mask,
-    )
-    if gui:
-        app.mainloop()
-    else:
-        app._cache_mask()
-        app.save_and_quit()
-
-    return app
+    
+    app = HSVMaskGUI(cap, start_frame, end_frame, out_file, input_mask)
+    app.mainloop()
 
 
 @cli.command()
