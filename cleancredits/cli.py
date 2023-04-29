@@ -161,9 +161,32 @@ def mask(
     if input_mask:
         input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
-    
-    app = HSVMaskGUI(cap, start_frame, end_frame, out_file, input_mask)
-    app.mainloop()
+
+    app = HSVMaskGUI(
+        cap,
+        start_frame,
+        end_frame,
+        out_file,
+        hue_min,
+        hue_max,
+        sat_min,
+        sat_max,
+        val_min,
+        val_max,
+        grow,
+        bbox_x1,
+        bbox_x2,
+        bbox_y1,
+        bbox_y2,
+        input_mask,
+    )
+    if gui:
+        app.mainloop()
+    else:
+        app._cache_mask()
+        app.save_and_quit()
+
+    return app
 
 
 @cli.command()
