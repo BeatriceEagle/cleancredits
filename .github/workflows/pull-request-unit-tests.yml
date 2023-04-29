@@ -1,5 +1,11 @@
 name: Pull request unit tests
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 on:
   pull_request:
     branches:
