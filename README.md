@@ -11,8 +11,8 @@ cleancredits has the following system dependencies:
 
 ## Installation
 
-1. Install [pipx](https://pypa.github.io/pipx/), a package manager for python tools.
-2. Mac OS: Run `brew install python-tk` to install tkinter bindings.
+1. Mac OS: Install [homebrew](https://brew.sh/) and run `brew install python-tk` to install tkinter bindings.
+2. Install [pipx](https://pypa.github.io/pipx/), a package manager for python tools.
 3. Install the latest released version of cleancredits:
 
    ```bash
