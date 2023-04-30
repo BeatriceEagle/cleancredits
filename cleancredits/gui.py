@@ -9,6 +9,8 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 
+from .helpers import get_frame, render_mask
+
 HSV_MODE_UNMASKED = "Unmasked"
 HSV_MODE_MASKED = "Masked"
 HSV_MODE_PREVIEW = "Preview"
@@ -45,7 +47,7 @@ class HSVMaskGUI(object):
         bbox_x2: int,
         bbox_y1: int,
         bbox_y2: int,
-        input_mask: pathlib.Path = None,
+        input_mask=None,
     ):
         self.options_size = 300
 
@@ -78,10 +80,7 @@ class HSVMaskGUI(object):
         self.start_frame = start_frame
         self.end_frame = end_frame
         self.out_file = out_file
-        self.input_mask = None
-        if input_mask:
-            self.input_mask = cv2.imread(str(input_mask))
-            self.input_mask = cv2.cvtColor(self.input_mask, cv2.COLOR_BGR2GRAY)
+        self.input_mask = input_mask
         self.draw_mask = np.full((self.video_height, self.video_width), 127, np.uint8)
 
         # Set up options display first so that it will not shrink.
@@ -513,15 +512,8 @@ class HSVMaskGUI(object):
             self.val_max.set(val + COLORCHOOSER_FUZZ)
             self.handle_mask_change()
 
-    def _select_frame(self):
-        selected_frame_num = self.selected_frame_num.get()
-        self.cap.set(cv2.CAP_PROP_POS_FRAMES, selected_frame_num)
-        _, self.selected_frame = self.cap.read()
-        if self.selected_frame is None:
-            raise Exception(f"Invalid frame: {selected_frame_num}")
-
     def handle_frame_change(self, val=None):
-        self._select_frame()
+        self.selected_frame = get_frame(self.cap, self.selected_frame_num.get())
         self._cache_mask()
         self._cache_display()
         self.render()
@@ -536,46 +528,22 @@ class HSVMaskGUI(object):
         self.render()
 
     def _cache_mask(self):
-        hue_min = self.hue_min.get()
-        hue_max = self.hue_max.get()
-        sat_min = self.sat_min.get()
-        sat_max = self.sat_max.get()
-        val_min = self.val_min.get()
-        val_max = self.val_max.get()
-
-        grow = self.grow.get()
-        bbox_x1 = self.bbox_x1.get()
-        bbox_y1 = self.bbox_y1.get()
-        bbox_x2 = self.bbox_x2.get()
-        bbox_y2 = self.bbox_y2.get()
-
-        # Set up np arrays for lower/upper bounds for mask range
-        hsv_min = np.array([hue_min, sat_min, val_min])
-        hsv_max = np.array([hue_max, sat_max, val_max])
-
-        frame_hsv = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2HSV)
-        hsv_mask = cv2.inRange(frame_hsv, hsv_min, hsv_max)
-
-        # Modify the hsv_mask
-        if grow > 0:
-            kernel = np.ones((grow, grow), np.uint8)
-            hsv_mask = cv2.dilate(hsv_mask, kernel, iterations=1)
-
-        bbox_mask = np.zeros(hsv_mask.shape, np.uint8)
-        bbox_mask[bbox_y1:bbox_y2, bbox_x1:bbox_x2] = 255
-        mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
-
-        # Combine with base mask in bitwise_or
-        if self.input_mask is not None:
-            mask = cv2.bitwise_or(mask, self.input_mask)
-
-        # Combine with include/exclude masks
-        _, include_mask = cv2.threshold(self.draw_mask, 128, 255, cv2.THRESH_BINARY)
-        mask = cv2.bitwise_or(mask, include_mask)
-        _, exclude_mask = cv2.threshold(self.draw_mask, 126, 255, cv2.THRESH_BINARY)
-        mask = cv2.bitwise_and(mask, exclude_mask)
-
-        self._mask = mask
+        self._mask = render_mask(
+            image=self.selected_frame,
+            hue_min=self.hue_min.get(),
+            hue_max=self.hue_max.get(),
+            sat_min=self.sat_min.get(),
+            sat_max=self.sat_max.get(),
+            val_min=self.val_min.get(),
+            val_max=self.val_max.get(),
+            grow=self.grow.get(),
+            bbox_x1=self.bbox_x1.get(),
+            bbox_y1=self.bbox_y1.get(),
+            bbox_x2=self.bbox_x2.get(),
+            bbox_y2=self.bbox_y2.get(),
+            input_mask=self.input_mask,
+            draw_mask=self.draw_mask,
+        )
 
     def _cache_display(self):
         display_mode = self.display_mode.get()
