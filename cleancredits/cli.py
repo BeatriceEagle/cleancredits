@@ -6,6 +6,7 @@ import shutil
 import click
 import cv2
 
+from .__version__ import __version__
 from .gui import HSVMaskGUI
 from .helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
@@ -14,6 +15,7 @@ DEFAULT_RADIUS = 3
 
 
 @click.group()
+@click.version_option(version=__version__)
 def cli():
     pass
 
