@@ -1,22 +1,29 @@
 # cleancredits
 
-
 A very simple tool for removing on-screen text from video, using a user-provided mask.
+
+## Dependencies
+
+cleancredits has the following system dependencies:
+
+- [ffmpeg](https://ffmpeg.org/) for video manipulation
+- [tkinter](https://docs.python.org/3/library/tkinter.html) for the GUI
 
 ## Installation
 
-Install the latest released version:
+1. Mac OS: Install [homebrew](https://brew.sh/) and run `brew install python-tk` to install tkinter bindings.
+2. Install [pipx](https://pypa.github.io/pipx/), a package manager for python tools.
+3. Install the latest released version of cleancredits:
 
-```bash
-pip install -U pip
-pip install cleancredits
-```
+   ```bash
+   pipx install cleancredits
+   ```
 
-Or install the latest version from Github:
+   Or install the latest version from Github:
 
-```bash
-pip install git+https://github.com/BeatriceEagle/cleancredits@main
-```
+   ```bash
+   pipx install git+https://github.com/BeatriceEagle/cleancredits@main
+   ```
 
 ## Usage
 

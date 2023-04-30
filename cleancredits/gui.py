@@ -2,8 +2,14 @@ import copy
 import math
 import pathlib
 import sys
-import tkinter as tk
-from tkinter import colorchooser, ttk
+
+try:
+    import tkinter as tk
+    from tkinter import colorchooser, ttk
+except ModuleNotFoundError as exc:
+    tk = None
+    colorchooser = None
+    ttk = None
 
 import cv2
 import numpy as np
@@ -49,6 +55,10 @@ class HSVMaskGUI(object):
         bbox_y2: int,
         input_mask=None,
     ):
+        if tk is None:
+            raise RuntimeError(
+                "Could not initialize GUI. Python is not configured to support tkinter."
+            )
         self.options_size = 300
 
         self.root = tk.Tk()
