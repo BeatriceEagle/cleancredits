@@ -2,6 +2,7 @@ import copy
 import math
 import pathlib
 import sys
+
 try:
     import tkinter as tk
     from tkinter import colorchooser, ttk
@@ -55,7 +56,9 @@ class HSVMaskGUI(object):
         input_mask=None,
     ):
         if tk is None:
-            raise RuntimeError("Could not initialize GUI. Python is not configured to support tkinter.")
+            raise RuntimeError(
+                "Could not initialize GUI. Python is not configured to support tkinter."
+            )
         self.options_size = 300
 
         self.root = tk.Tk()
