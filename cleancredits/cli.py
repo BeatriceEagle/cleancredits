@@ -7,7 +7,7 @@ import click
 import cv2
 
 from .gui import HSVMaskGUI
-from .helpers import clean_frames, join_frames, split_frames
+from .helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
 DEFAULT_RADIUS = 3
@@ -37,7 +37,7 @@ def cli():
 @click.option(
     "-i",
     "--input",
-    "input_mask",
+    "input_mask_path",
     help="Input mask. These pixels will always be present in the output mask (unless explicitly excluded).",
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
 )
@@ -123,7 +123,7 @@ def mask(
     video,
     start,
     end,
-    input_mask,
+    input_mask_path,
     output,
     hue_min,
     hue_max,
@@ -158,35 +158,54 @@ def mask(
         end, fps, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
     )
 
-    if input_mask:
-        input_mask = pathlib.Path(input_mask)
     out_file = pathlib.Path(output)
 
-    app = HSVMaskGUI(
-        cap,
-        start_frame,
-        end_frame,
-        out_file,
-        hue_min,
-        hue_max,
-        sat_min,
-        sat_max,
-        val_min,
-        val_max,
-        grow,
-        bbox_x1,
-        bbox_x2,
-        bbox_y1,
-        bbox_y2,
-        input_mask,
-    )
-    if gui:
-        app.mainloop()
-    else:
-        app._cache_mask()
-        app.save_and_quit()
+    input_mask = None
+    if input_mask_path:
+        input_mask = cv2.imread(str(input_mask))
+        input_mask = cv2.cvtColor(input_mask, cv2.COLOR_BGR2GRAY)
 
-    return app
+    if gui:
+        app = HSVMaskGUI(
+            cap,
+            start_frame,
+            end_frame,
+            out_file,
+            hue_min,
+            hue_max,
+            sat_min,
+            sat_max,
+            val_min,
+            val_max,
+            grow,
+            bbox_x1,
+            bbox_x2,
+            bbox_y1,
+            bbox_y2,
+            input_mask,
+        )
+        app.mainloop()
+        return app._mask
+    else:
+        frame = get_frame(cap, start_frame)
+        mask = render_mask(
+            image=frame,
+            hue_min=hue_min,
+            hue_max=hue_max,
+            sat_min=sat_min,
+            sat_max=sat_max,
+            val_min=val_min,
+            val_max=val_max,
+            grow=grow,
+            bbox_x1=bbox_x1,
+            bbox_x2=bbox_x2,
+            bbox_y1=bbox_y1,
+            bbox_y2=bbox_y2,
+            input_mask=input_mask,
+            draw_mask=None,
+        )
+        cv2.imwrite(str(out_file), mask)
+        return mask
 
 
 @cli.command()

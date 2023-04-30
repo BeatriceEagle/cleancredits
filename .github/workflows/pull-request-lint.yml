@@ -1,16 +1,26 @@
 name: Pull request lint checks
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
 on:
   pull_request:
-    branches: [ $default-branch ]
+    branches:
+      - main
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
 
     steps:
       - uses: actions/checkout@v3
