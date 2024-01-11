@@ -50,7 +50,8 @@ def get_zoom_crop(
     # Crop x and y are set at half the zoom width away from the zoom center,
     # in order to center it. However, the zoom center may be near an edge, so
     # we need to clip it between 0 and the farthest right point possible that
-    # won't spill over the video width. For zoom out, the crop x and y will be 0.
+    # won't spill over the video width. If the entire frame should be visible,
+    # the crop x and y will always be 0.
     crop_x = np.clip(
         zoom_center_x - (zoom_width // 2), 0, max(video_width - zoom_width, 0)
     )
