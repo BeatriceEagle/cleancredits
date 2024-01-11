@@ -36,11 +36,11 @@ from .gui import get_zoom_crop
 )
 def test_get_zoom_and_crop__zoom_in__video_size_gte_display_size(
     zoom_factor: float,
-    zoom_center_coords: tuple[int, int],
-    video_dims: tuple[int, int],
-    display_dims: tuple[int, int],
-    expected_crop_coords: tuple[int, int],
-    expected_zoom_dims: tuple[int, int],
+    zoom_center_coords,
+    video_dims,
+    display_dims,
+    expected_crop_coords,
+    expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
@@ -89,11 +89,11 @@ def test_get_zoom_and_crop__zoom_in__video_size_gte_display_size(
 )
 def test_get_zoom_and_crop__zoom_in__video_size_lt_display_size(
     zoom_factor: float,
-    zoom_center_coords: tuple[int, int],
-    video_dims: tuple[int, int],
-    display_dims: tuple[int, int],
-    expected_crop_coords: tuple[int, int],
-    expected_zoom_dims: tuple[int, int],
+    zoom_center_coords,
+    video_dims,
+    display_dims,
+    expected_crop_coords,
+    expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
@@ -132,11 +132,11 @@ def test_get_zoom_and_crop__zoom_in__video_size_lt_display_size(
 )
 def test_get_zoom_and_crop__zoom_out__video_size_lte_display_size(
     zoom_factor: float,
-    zoom_center_coords: tuple[int, int],
-    video_dims: tuple[int, int],
-    display_dims: tuple[int, int],
-    expected_crop_coords: tuple[int, int],
-    expected_zoom_dims: tuple[int, int],
+    zoom_center_coords,
+    video_dims,
+    display_dims,
+    expected_crop_coords,
+    expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
@@ -173,11 +173,11 @@ def test_get_zoom_and_crop__zoom_out__video_size_lte_display_size(
 )
 def test_get_zoom_and_crop__zoom_out__video_size_gt_display_size(
     zoom_factor: float,
-    zoom_center_coords: tuple[int, int],
-    video_dims: tuple[int, int],
-    display_dims: tuple[int, int],
-    expected_crop_coords: tuple[int, int],
-    expected_zoom_dims: tuple[int, int],
+    zoom_center_coords,
+    video_dims,
+    display_dims,
+    expected_crop_coords,
+    expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
