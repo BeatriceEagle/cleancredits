@@ -1,3 +1,4 @@
+import os
 import pathlib
 import shutil
 
@@ -67,40 +68,52 @@ def test_clean_frames(tmp_path):
 def test_join_frames(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
-    input_framerate = 23.976
     expected_framerate = 25
     assert not out_file.exists()
-    join_frames(in_dir, out_file, input_framerate, expected_framerate)
+    join_frames(in_dir, out_file, expected_framerate)
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    expected_frame_count = len(
+        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    )
+    assert frame_count == expected_frame_count
 
 
 def test_join_frames__int_framerate(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
-    input_framerate = 23.976
     expected_framerate = 15
     assert not out_file.exists()
-    join_frames(in_dir, out_file, input_framerate, expected_framerate)
+    join_frames(in_dir, out_file, expected_framerate)
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    expected_frame_count = len(
+        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    )
+    assert frame_count == expected_frame_count
 
 
 def test_join_frames__float_framerate(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
-    input_framerate = 23.976
     expected_framerate = 24000 / 1001
     assert not out_file.exists()
-    join_frames(in_dir, out_file, input_framerate, "24000/1001")
+    join_frames(in_dir, out_file, "24000/1001")
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    expected_frame_count = len(
+        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    )
+    assert frame_count == expected_frame_count
