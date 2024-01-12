@@ -31,6 +31,39 @@ DRAW_MODE_INCLUDE = "Include"
 DRAW_MODE_RESET = "Reset"
 
 
+def get_zoom_crop(
+    zoom_factor: float,
+    zoom_center_x: int,
+    zoom_center_y: int,
+    video_width: int,
+    video_height: int,
+    display_width: int,
+    display_height: int,
+) -> (int, int, int, int):
+    # zoom width and height are the dimensions of the box in the original
+    # image that will be zoomed in (or out) and shown to the user. This should
+    # be the largest possible width/height that will fit in the display box
+    # after the zoom is applied.
+    zoom_width = int(min(video_width * zoom_factor, display_width) / zoom_factor)
+    zoom_height = int(min(video_height * zoom_factor, display_height) / zoom_factor)
+
+    # Crop x and y are set at half the zoom width away from the zoom center,
+    # in order to center it. However, the zoom center may be near an edge, so
+    # we need to clip it between 0 and the farthest right point possible that
+    # won't spill over the video width. If the entire frame should be visible,
+    # the crop x and y will always be 0.
+    crop_x = np.clip(
+        zoom_center_x - (zoom_width // 2), 0, max(video_width - zoom_width, 0)
+    )
+    crop_y = np.clip(
+        zoom_center_y - (zoom_height // 2),
+        0,
+        max(video_height - zoom_height, 0),
+    )
+
+    return crop_x, crop_y, zoom_width, zoom_height
+
+
 def handle_scale_release(scale, callback):
     scale.bind("<ButtonRelease-1>", callback)
 
@@ -410,13 +443,22 @@ class HSVMaskGUI(object):
             child.bind("<MouseWheel>", self.handle_options_mousewheel)
 
         # First render is basically a frame change.
+        # Temporarily assume the display width / height match the video size
+        # so that we can get accurate measurements.
+        self.display_width = self.video_width
+        self.display_height = self.video_height
         self.handle_frame_change()
 
-        # This will give us the actual window size. Now set zoom factor to fit the whole image, then re-render.
+        # This will give us the actual window size.
         self.root.update()
-        height_ratio = self.display.winfo_height() / self.video_height
-        width_ratio = self.display.winfo_width() / self.video_width
-        self.zoom_factor.set(int(min(height_ratio, width_ratio) * 100))
+        # Now set zoom factor to fit the whole image, then re-render.
+        self.display_width = self.display.winfo_width()
+        self.display_height = self.display.winfo_height()
+        height_ratio = self.display_height / self.video_height
+        width_ratio = self.display_width / self.video_width
+        self.zoom_factor.set(max(1, int(min(height_ratio, width_ratio) * 100)))
+        self.display.bind("<Configure>", self.handle_display_configure)
+
         self.render()
 
     def mainloop(self):
@@ -435,29 +477,18 @@ class HSVMaskGUI(object):
         else:
             self.display.config(cursor="none")
 
-    def get_zoom_and_crop(self):
-        zoom_factor = self.zoom_factor.get() / 100
-        zoom_center_x = self.zoom_center_x.get()
-        zoom_center_y = self.zoom_center_y.get()
-        zoom_width = int(self.video_width // zoom_factor)
-        zoom_height = int(self.video_height // zoom_factor)
-        # Crop x and y are set at half the zoom width away from the zoom center,
-        # in order to center it. However, the zoom center may be near an edge, so
-        # we need to clip it between 0 and the farthest right point possible that
-        # won't spill over the video width. For zoom out, the crop x and y will be 0.
-        crop_x = np.clip(
-            zoom_center_x - (zoom_width // 2), 0, max(self.video_width - zoom_width, 0)
-        )
-        crop_y = np.clip(
-            zoom_center_y - (zoom_height // 2),
-            0,
-            max(self.video_height - zoom_height, 0),
-        )
-        return zoom_factor, crop_x, crop_y, zoom_width, zoom_height
-
     def _get_img_coords(self, zoomed_coords):
         zoomed_x, zoomed_y = zoomed_coords
-        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
+        zoom_factor = self.zoom_factor.get() / 100
+        crop_x, crop_y, _, _ = get_zoom_crop(
+            zoom_factor,
+            self.zoom_center_x.get(),
+            self.zoom_center_y.get(),
+            self.video_width,
+            self.video_height,
+            self.display_width,
+            self.display_height,
+        )
         # For the target pixel, compute the pixel in the original image.
         # crop_x and crop_y are the "origin" coordinates for the box in the
         # original image, so if we divide the scaled coordinates
@@ -506,6 +537,14 @@ class HSVMaskGUI(object):
         self._cache_mask()
         self._cache_display()
         self.render()
+
+    def handle_display_configure(self, event):
+        if event.widget == self.display and (
+            self.display_width != event.width or self.display_height != event.height
+        ):
+            self.display_width = event.width
+            self.display_height = event.height
+            self.handle_display_change()
 
     def handle_colorchooser(self):
         # askcolor returns ((r, g, b), hex)
@@ -580,7 +619,16 @@ class HSVMaskGUI(object):
             img = self._display
 
         # Crop to the specified center, then zoom
-        zoom_factor, crop_x, crop_y, zoom_width, zoom_height = self.get_zoom_and_crop()
+        zoom_factor = self.zoom_factor.get() / 100
+        crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
+            zoom_factor,
+            self.zoom_center_x.get(),
+            self.zoom_center_y.get(),
+            self.video_width,
+            self.video_height,
+            self.display_width,
+            self.display_height,
+        )
         img = img[crop_y : crop_y + zoom_height, crop_x : crop_x + zoom_width]
         img = cv2.resize(
             img,
@@ -591,6 +639,7 @@ class HSVMaskGUI(object):
         )
 
         imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
+
         # Prevent garbage collection
         self.display.imgtk = imgtk
         self.display.configure(image=imgtk)
