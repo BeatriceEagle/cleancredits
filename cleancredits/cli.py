@@ -164,7 +164,7 @@ def mask(
 
     input_mask = None
     if input_mask_path:
-        input_mask = cv2.imread(str(input_mask))
+        input_mask = cv2.imread(str(input_mask_path))
         input_mask = cv2.cvtColor(input_mask, cv2.COLOR_BGR2GRAY)
 
     if gui:
