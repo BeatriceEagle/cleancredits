@@ -107,10 +107,15 @@ def clean_frames(
         cv2.imwrite(str(out_file), interp)
 
 
-def join_frames(in_dir: pathlib.Path, out_file: pathlib.Path, framerate: str):
+def join_frames(
+    in_dir: pathlib.Path, out_file: pathlib.Path, input_framerate: float, framerate: str
+):
     assert in_dir.is_dir()
 
     in_ = in_dir / SPLIT_FRAME_FILENAME
-    ffmpeg.input(str(in_)).filter("fps", fps=framerate).output(
-        str(out_file), vcodec="libx264", pix_fmt="yuv420p"
-    ).run()
+    # Set the input framerate explicitly to avoid using the default (25) which
+    # may cause frames to be dropped or introduced if that doesn't match
+    # the video being cleaned.
+    ffmpeg.input(str(in_), framerate=input_framerate).filter(
+        "fps", fps=framerate
+    ).output(str(out_file), vcodec="libx264", pix_fmt="yuv420p", crf=17).run()

@@ -67,9 +67,10 @@ def test_clean_frames(tmp_path):
 def test_join_frames(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
+    input_framerate = 23.976
     expected_framerate = 25
     assert not out_file.exists()
-    join_frames(in_dir, out_file, expected_framerate)
+    join_frames(in_dir, out_file, input_framerate, expected_framerate)
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))
@@ -80,9 +81,10 @@ def test_join_frames(tmp_path):
 def test_join_frames__int_framerate(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
+    input_framerate = 23.976
     expected_framerate = 15
     assert not out_file.exists()
-    join_frames(in_dir, out_file, expected_framerate)
+    join_frames(in_dir, out_file, input_framerate, expected_framerate)
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))
@@ -93,9 +95,10 @@ def test_join_frames__int_framerate(tmp_path):
 def test_join_frames__float_framerate(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_file = tmp_path / "output.mp4"
+    input_framerate = 23.976
     expected_framerate = 24000 / 1001
     assert not out_file.exists()
-    join_frames(in_dir, out_file, "24000/1001")
+    join_frames(in_dir, out_file, input_framerate, "24000/1001")
     assert out_file.exists()
     assert out_file.is_file()
     cap = cv2.VideoCapture(str(out_file))

@@ -247,9 +247,10 @@ def mask(
 )
 def clean(video, mask, start, end, radius, framerate, output):
     cap = cv2.VideoCapture(video)
+    input_framerate = cap.get(cv2.CAP_PROP_FPS)
     if not framerate:
         # Default to the input video's framerate
-        framerate = cap.get(cv2.CAP_PROP_FPS)
+        framerate = input_framerate
 
     video_file = pathlib.Path(video)
     mask_file = pathlib.Path(mask)
@@ -267,19 +268,19 @@ def clean(video, mask, start, end, radius, framerate, output):
     output_clip_folder = clip_folder / "output"
     os.mkdir(output_clip_folder)
 
-    start_frame = timecode_to_frame(start, fps=framerate, default=0)
+    start_frame = timecode_to_frame(start, fps=input_framerate, default=0)
     end_frame = timecode_to_frame(
-        end, fps=framerate, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
+        end, fps=input_framerate, default=cap.get(cv2.CAP_PROP_FRAME_COUNT) - 1
     )
 
     split_frames(
         video_file,
         clip_folder,
-        start=f"{start_frame / framerate}s",
-        end=f"{end_frame / framerate}s",
+        start=f"{start_frame / input_framerate}s",
+        end=f"{end_frame / input_framerate}s",
     )
     clean_frames(mask_file, clip_folder, output_clip_folder, radius)
 
     if output:
         out_file = pathlib.Path(output)
-        join_frames(output_clip_folder, out_file, framerate)
+        join_frames(output_clip_folder, out_file, input_framerate, framerate)
