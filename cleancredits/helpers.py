@@ -111,9 +111,8 @@ def join_frames(in_dir: pathlib.Path, out_file: pathlib.Path, framerate: str):
     assert in_dir.is_dir()
 
     in_ = in_dir / SPLIT_FRAME_FILENAME
-    # Set the input framerate explicitly to avoid using the default (25) which
-    # may cause frames to be dropped or introduced if that doesn't match
-    # the video being cleaned.
+    # Set the input & output framerates to the same value to avoid ffmpeg dropping
+    # or duplicating frames to "fix" the speed change.
     ffmpeg.input(str(in_), framerate=framerate).filter("fps", fps=framerate).output(
         str(out_file), vcodec="libx264", pix_fmt="yuv420p", crf=17
     ).run()
