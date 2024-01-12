@@ -283,4 +283,4 @@ def clean(video, mask, start, end, radius, framerate, output):
 
     if output:
         out_file = pathlib.Path(output)
-        join_frames(output_clip_folder, out_file, input_framerate, framerate)
+        join_frames(output_clip_folder, out_file, framerate)
