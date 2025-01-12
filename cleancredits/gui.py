@@ -552,13 +552,15 @@ class HSVMaskGUI(object):
         if color is not None:
             pixel = np.array([[color]], np.uint8)
             pixel_hsv = cv2.cvtColor(pixel, cv2.COLOR_RGB2HSV)
-            hue, sat, val = pixel_hsv[0][0]
-            self.hue_min.set(hue - COLORCHOOSER_FUZZ)
-            self.hue_max.set(hue + COLORCHOOSER_FUZZ)
-            self.sat_min.set(sat - COLORCHOOSER_FUZZ)
-            self.sat_max.set(sat + COLORCHOOSER_FUZZ)
-            self.val_min.set(val - COLORCHOOSER_FUZZ)
-            self.val_max.set(val + COLORCHOOSER_FUZZ)
+
+            hue_min, sat_min, val_min = cv2.subtract(pixel_hsv, COLORCHOOSER_FUZZ)[0][0]
+            hue_max, sat_max, val_max = cv2.add(pixel_hsv, COLORCHOOSER_FUZZ)[0][0]
+            self.hue_min.set(hue_min)
+            self.hue_max.set(hue_max)
+            self.sat_min.set(sat_min)
+            self.sat_max.set(sat_max)
+            self.val_min.set(val_min)
+            self.val_max.set(val_max)
             self.handle_mask_change()
 
     def handle_frame_change(self, val=None):
