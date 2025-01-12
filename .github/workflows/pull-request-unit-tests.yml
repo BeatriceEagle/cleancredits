@@ -30,8 +30,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-      - uses: FedericoCarboni/setup-ffmpeg@v2
-        id: setup-ffmpeg
+      - name: Setup FFmpeg
+        uses: AnimMouse/setup-ffmpeg@v1
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
