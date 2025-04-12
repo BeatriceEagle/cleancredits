@@ -17,9 +17,9 @@ from PIL import Image, ImageTk
 
 from .helpers import get_frame, render_mask
 
-HSV_MODE_UNMASKED = "Unmasked"
-HSV_MODE_MASKED = "Masked"
-HSV_MODE_PREVIEW = "Preview"
+DISPLAY_MODE_MASK = "Mask"
+DISPLAY_MODE_PREVIEW = "Preview"
+DISPLAY_MODE_ORIGINAL = "Original"
 
 SECTION_PADDING = {"pady": (50, 0)}
 
@@ -213,26 +213,26 @@ class HSVMaskGUI(object):
         ).grid(row=3, column=1)
 
         self.display_mode = tk.StringVar()
-        self.display_mode.set(HSV_MODE_MASKED)
+        self.display_mode.set(DISPLAY_MODE_MASK)
         ttk.Label(self.options_frame, text="Display mode").grid(row=10, column=0)
         ttk.Radiobutton(
             self.options_frame,
-            text=HSV_MODE_UNMASKED,
-            value=HSV_MODE_UNMASKED,
+            text=DISPLAY_MODE_MASK,
+            value=DISPLAY_MODE_MASK,
             variable=self.display_mode,
             command=self.handle_display_change,
         ).grid(row=10, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
-            text=HSV_MODE_MASKED,
-            value=HSV_MODE_MASKED,
+            text=DISPLAY_MODE_PREVIEW,
+            value=DISPLAY_MODE_PREVIEW,
             variable=self.display_mode,
             command=self.handle_display_change,
         ).grid(row=11, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
-            text=HSV_MODE_PREVIEW,
-            value=HSV_MODE_PREVIEW,
+            text=DISPLAY_MODE_ORIGINAL,
+            value=DISPLAY_MODE_ORIGINAL,
             variable=self.display_mode,
             command=self.handle_display_change,
         ).grid(row=12, column=1, sticky="w")
@@ -605,9 +605,9 @@ class HSVMaskGUI(object):
         radius = 3
 
         # Render the displayed image
-        if display_mode == HSV_MODE_UNMASKED:
+        if display_mode == DISPLAY_MODE_ORIGINAL:
             img = cv2.cvtColor(self.selected_frame, cv2.COLOR_BGR2RGBA)
-        elif display_mode == HSV_MODE_MASKED:
+        elif display_mode == DISPLAY_MODE_MASK:
             img = cv2.bitwise_and(
                 self.selected_frame, self.selected_frame, mask=self._mask
             )
