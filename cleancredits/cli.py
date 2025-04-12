@@ -93,26 +93,26 @@ def cli():
     default=0,
 )
 @click.option(
-    "--bbox-x1",
-    help="Bounding box left x",
+    "--crop-left",
+    help="Crop left",
     type=click.IntRange(0, clamp=True),
     default=0,
 )
 @click.option(
-    "--bbox-x2",
-    help="Bounding box right x",
+    "--crop-right",
+    help="Crop right",
     type=click.IntRange(0, clamp=True),
     default=None,
 )
 @click.option(
-    "--bbox-y1",
-    help="Bounding box top y",
+    "--crop-top",
+    help="Crop top",
     type=click.IntRange(0, clamp=True),
     default=0,
 )
 @click.option(
-    "--bbox-y2",
-    help="Bounding box bottom y",
+    "--crop-bottom",
+    help="Crop bottom",
     type=click.IntRange(0, clamp=True),
     default=None,
 )
@@ -134,25 +134,25 @@ def mask(
     val_min,
     val_max,
     grow,
-    bbox_x1,
-    bbox_x2,
-    bbox_y1,
-    bbox_y2,
+    crop_left,
+    crop_right,
+    crop_top,
+    crop_bottom,
     gui,
 ):
     cap = cv2.VideoCapture(video)
     video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     video_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    bbox_x1 = min(bbox_x1, video_width)
-    if bbox_x2 is None:
-        bbox_x2 = video_width
+    crop_left = min(crop_left, video_width)
+    if crop_right is None:
+        crop_right = video_width
     else:
-        bbox_x2 = min(bbox_x2, video_width)
-    bbox_y1 = min(bbox_y1, video_height)
-    if bbox_y2 is None:
-        bbox_y2 = video_height
+        crop_right = min(crop_right, video_width)
+    crop_top = min(crop_top, video_height)
+    if crop_bottom is None:
+        crop_bottom = video_height
     else:
-        bbox_y2 = min(bbox_y2, video_height)
+        crop_bottom = min(crop_bottom, video_height)
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     start_frame = timecode_to_frame(start, fps, default=0)
@@ -180,10 +180,10 @@ def mask(
             val_min,
             val_max,
             grow,
-            bbox_x1,
-            bbox_x2,
-            bbox_y1,
-            bbox_y2,
+            crop_left,
+            crop_right,
+            crop_top,
+            crop_bottom,
             input_mask,
         )
         app.mainloop()
@@ -199,10 +199,10 @@ def mask(
             val_min=val_min,
             val_max=val_max,
             grow=grow,
-            bbox_x1=bbox_x1,
-            bbox_x2=bbox_x2,
-            bbox_y1=bbox_y1,
-            bbox_y2=bbox_y2,
+            crop_left=crop_left,
+            crop_right=crop_right,
+            crop_top=crop_top,
+            crop_bottom=crop_bottom,
             input_mask=input_mask,
             draw_mask=None,
         )

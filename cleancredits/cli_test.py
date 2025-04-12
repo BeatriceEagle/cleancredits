@@ -8,7 +8,7 @@ from .helpers_test import TESTDATA_PATH
 
 
 @pytest.mark.parametrize(
-    "hue_min,hue_max,sat_min,sat_max,val_min,val_max,grow,bbox_x1,bbox_x2,bbox_y1,bbox_y2,input_mask",
+    "hue_min,hue_max,sat_min,sat_max,val_min,val_max,grow,crop_left,crop_right,crop_top,crop_bottom,input_mask",
     [
         (0, 179, 0, 255, 0, 255, 0, 0, None, 0, None, None),
         (10, 20, 30, 50, 40, 60, 1, 100, 500, 150, 700, None),
@@ -28,10 +28,10 @@ def test_mask_no_gui(
     val_min,
     val_max,
     grow,
-    bbox_x1,
-    bbox_x2,
-    bbox_y1,
-    bbox_y2,
+    crop_left,
+    crop_right,
+    crop_top,
+    crop_bottom,
     input_mask,
     tmp_path,
 ):
@@ -54,21 +54,21 @@ def test_mask_no_gui(
         val_max,
         "--grow",
         grow,
-        "--bbox-x1",
-        bbox_x1,
-        "--bbox-y1",
-        bbox_y1,
+        "--crop-left",
+        crop_left,
+        "--crop-top",
+        crop_top,
     ]
 
-    if bbox_x2 is not None:
+    if crop_right is not None:
         args += [
-            "--bbox-x2",
-            bbox_x2,
+            "--crop-right",
+            crop_right,
         ]
-    if bbox_y2 is not None:
+    if crop_bottom is not None:
         args += [
-            "--bbox-y2",
-            bbox_y2,
+            "--crop-bottom",
+            crop_bottom,
         ]
     if input_mask is not None:
         args += ["-i", f"{TESTDATA_PATH / input_mask}.png"]
@@ -85,7 +85,7 @@ def test_mask_no_gui(
     expected_mask_path = str(
         TESTDATA_PATH
         / "horses-720p-masks"
-        / f"mask-{hue_min}-{hue_max}-{sat_min}-{sat_max}-{val_min}-{val_max}-{grow}-{bbox_x1}-{bbox_x2}-{bbox_y1}-{bbox_y2}-{input_mask}.png"
+        / f"mask-{hue_min}-{hue_max}-{sat_min}-{sat_max}-{val_min}-{val_max}-{grow}-{crop_left}-{crop_right}-{crop_top}-{crop_bottom}-{input_mask}.png"
     )
     expected_mask = cv2.imread(expected_mask_path)
     expected_mask = cv2.cvtColor(expected_mask, cv2.COLOR_BGR2GRAY)

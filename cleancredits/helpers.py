@@ -26,10 +26,10 @@ def render_mask(
     val_min: int,
     val_max: int,
     grow: int,
-    bbox_x1: int,
-    bbox_x2: int,
-    bbox_y1: int,
-    bbox_y2: int,
+    crop_left: int,
+    crop_right: int,
+    crop_top: int,
+    crop_bottom: int,
     input_mask=None,
     draw_mask=None,
 ) -> np.array:
@@ -46,7 +46,7 @@ def render_mask(
         hsv_mask = cv2.dilate(hsv_mask, kernel, iterations=1)
 
     bbox_mask = np.zeros(hsv_mask.shape, np.uint8)
-    bbox_mask[bbox_y1:bbox_y2, bbox_x1:bbox_x2] = 255
+    bbox_mask[crop_top:crop_bottom, crop_left:crop_right] = 255
     mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
     # Combine with base mask in bitwise_or
