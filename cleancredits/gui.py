@@ -321,7 +321,6 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=106, column=1)
 
-
         ttk.Label(self.options_frame, text="Crop").grid(
             row=200, column=0, columnspan=2, **SECTION_PADDING
         )
