@@ -237,7 +237,7 @@ class HSVMaskGUI(object):
             command=self.handle_display_change,
         ).grid(row=12, column=1, sticky="w")
 
-        ttk.Label(self.options_frame, text="HSV Selection").grid(
+        ttk.Label(self.options_frame, text="Hue / Saturation / Value").grid(
             row=100, column=0, columnspan=2, **SECTION_PADDING
         )
         ttk.Button(
@@ -298,7 +298,7 @@ class HSVMaskGUI(object):
         # Value
         self.val_min = tk.IntVar()
         self.val_min.set(val_min)
-        ttk.Label(self.options_frame, text="Val Min").grid(row=105, column=0)
+        ttk.Label(self.options_frame, text="Val Min").grid(row=114, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
@@ -307,10 +307,10 @@ class HSVMaskGUI(object):
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.handle_mask_change,
-        ).grid(row=105, column=1)
+        ).grid(row=114, column=1)
         self.val_max = tk.IntVar()
         self.val_max.set(val_max)
-        ttk.Label(self.options_frame, text="Val Max").grid(row=106, column=0)
+        ttk.Label(self.options_frame, text="Val Max").grid(row=115, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
@@ -319,7 +319,7 @@ class HSVMaskGUI(object):
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.handle_mask_change,
-        ).grid(row=106, column=1)
+        ).grid(row=115, column=1)
 
         ttk.Label(self.options_frame, text="Crop").grid(
             row=200, column=0, columnspan=2, **SECTION_PADDING
