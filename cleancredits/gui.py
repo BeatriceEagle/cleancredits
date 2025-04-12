@@ -82,10 +82,10 @@ class HSVMaskGUI(object):
         val_min: int,
         val_max: int,
         grow: int,
-        bbox_x1: int,
-        bbox_x2: int,
-        bbox_y1: int,
-        bbox_y2: int,
+        crop_left: int,
+        crop_right: int,
+        crop_top: int,
+        crop_bottom: int,
         input_mask=None,
     ):
         if tk is None:
@@ -321,12 +321,65 @@ class HSVMaskGUI(object):
             command=self.handle_mask_change,
         ).grid(row=106, column=1)
 
-        ttk.Label(self.options_frame, text="Mask alteration").grid(
+
+        ttk.Label(self.options_frame, text="Crop").grid(
             row=200, column=0, columnspan=2, **SECTION_PADDING
+        )
+        self.crop_left = tk.IntVar()
+        self.crop_left.set(crop_left)
+        ttk.Label(self.options_frame, text="Left").grid(row=210, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=self.video_width,
+            variable=self.crop_left,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.handle_mask_change,
+        ).grid(row=210, column=1)
+        self.crop_top = tk.IntVar()
+        self.crop_top.set(crop_top)
+        ttk.Label(self.options_frame, text="Top").grid(row=211, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=self.video_height,
+            variable=self.crop_top,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.handle_mask_change,
+        ).grid(row=211, column=1)
+        self.crop_right = tk.IntVar()
+        self.crop_right.set(crop_right)
+        ttk.Label(self.options_frame, text="Right").grid(row=212, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=self.video_width,
+            variable=self.crop_right,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.handle_mask_change,
+        ).grid(row=212, column=1)
+        self.crop_bottom = tk.IntVar()
+        self.crop_bottom.set(crop_bottom)
+        ttk.Label(self.options_frame, text="Bottom").grid(row=213, column=0)
+        tk.Scale(
+            self.options_frame,
+            from_=0,
+            to=self.video_height,
+            variable=self.crop_bottom,
+            resolution=1,
+            orient=tk.HORIZONTAL,
+            command=self.handle_mask_change,
+        ).grid(row=213, column=1)
+
+        ttk.Label(self.options_frame, text="Other alteration").grid(
+            row=300, column=0, columnspan=2, **SECTION_PADDING
         )
         self.grow = tk.IntVar()
         self.grow.set(grow)
-        ttk.Label(self.options_frame, text="Grow").grid(row=201, column=0)
+        ttk.Label(self.options_frame, text="Grow").grid(row=301, column=0)
         tk.Scale(
             self.options_frame,
             from_=0,
@@ -335,91 +388,42 @@ class HSVMaskGUI(object):
             resolution=1,
             orient=tk.HORIZONTAL,
             command=self.handle_mask_change,
-        ).grid(row=201, column=1)
-
-        self.bbox_x1 = tk.IntVar()
-        self.bbox_x1.set(bbox_x1)
-        ttk.Label(self.options_frame, text="Bounding Box X1").grid(row=210, column=0)
-        tk.Scale(
-            self.options_frame,
-            from_=0,
-            to=self.video_width,
-            variable=self.bbox_x1,
-            resolution=1,
-            orient=tk.HORIZONTAL,
-            command=self.handle_mask_change,
-        ).grid(row=210, column=1)
-        self.bbox_y1 = tk.IntVar()
-        self.bbox_y1.set(bbox_y1)
-        ttk.Label(self.options_frame, text="Bounding Box Y1").grid(row=211, column=0)
-        tk.Scale(
-            self.options_frame,
-            from_=0,
-            to=self.video_height,
-            variable=self.bbox_y1,
-            resolution=1,
-            orient=tk.HORIZONTAL,
-            command=self.handle_mask_change,
-        ).grid(row=211, column=1)
-        self.bbox_x2 = tk.IntVar()
-        self.bbox_x2.set(bbox_x2)
-        ttk.Label(self.options_frame, text="Bounding Box X2").grid(row=212, column=0)
-        tk.Scale(
-            self.options_frame,
-            from_=0,
-            to=self.video_width,
-            variable=self.bbox_x2,
-            resolution=1,
-            orient=tk.HORIZONTAL,
-            command=self.handle_mask_change,
-        ).grid(row=212, column=1)
-        self.bbox_y2 = tk.IntVar()
-        self.bbox_y2.set(bbox_y2)
-        ttk.Label(self.options_frame, text="Bounding Box Y2").grid(row=213, column=0)
-        tk.Scale(
-            self.options_frame,
-            from_=0,
-            to=self.video_height,
-            variable=self.bbox_y2,
-            resolution=1,
-            orient=tk.HORIZONTAL,
-            command=self.handle_mask_change,
-        ).grid(row=213, column=1)
+        ).grid(row=301, column=1)
 
         self.draw_mode = tk.StringVar()
         self.draw_mode.set(DRAW_MODE_NONE)
-        ttk.Label(self.options_frame, text="Draw mode").grid(row=220, column=0)
+        ttk.Label(self.options_frame, text="Draw mode").grid(row=320, column=0)
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_NONE,
             value=DRAW_MODE_NONE,
             variable=self.draw_mode,
             command=self.handle_draw_mode,
-        ).grid(row=220, column=1, sticky="w")
+        ).grid(row=320, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_INCLUDE,
             value=DRAW_MODE_INCLUDE,
             variable=self.draw_mode,
             command=self.handle_draw_mode,
-        ).grid(row=221, column=1, sticky="w")
+        ).grid(row=321, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_EXCLUDE,
             value=DRAW_MODE_EXCLUDE,
             variable=self.draw_mode,
             command=self.handle_draw_mode,
-        ).grid(row=222, column=1, sticky="w")
+        ).grid(row=322, column=1, sticky="w")
         ttk.Radiobutton(
             self.options_frame,
             text=DRAW_MODE_RESET,
             value=DRAW_MODE_RESET,
             variable=self.draw_mode,
             command=self.handle_draw_mode,
-        ).grid(row=223, column=1, sticky="w")
+        ).grid(row=323, column=1, sticky="w")
         self.draw_size = tk.IntVar()
         self.draw_size.set(1)
-        ttk.Label(self.options_frame, text="Draw size").grid(row=224, column=0)
+        ttk.Label(self.options_frame, text="Draw size").grid(row=324, column=0)
         tk.Scale(
             self.options_frame,
             from_=1,
@@ -427,7 +431,7 @@ class HSVMaskGUI(object):
             variable=self.draw_size,
             resolution=1,
             orient=tk.HORIZONTAL,
-        ).grid(row=224, column=1)
+        ).grid(row=324, column=1)
         self.draw_prev = None
 
         self.save_button = ttk.Button(
@@ -588,10 +592,10 @@ class HSVMaskGUI(object):
             val_min=self.val_min.get(),
             val_max=self.val_max.get(),
             grow=self.grow.get(),
-            bbox_x1=self.bbox_x1.get(),
-            bbox_y1=self.bbox_y1.get(),
-            bbox_x2=self.bbox_x2.get(),
-            bbox_y2=self.bbox_y2.get(),
+            crop_left=self.crop_left.get(),
+            crop_top=self.crop_top.get(),
+            crop_right=self.crop_right.get(),
+            crop_bottom=self.crop_bottom.get(),
             input_mask=self.input_mask,
             draw_mask=self.draw_mask,
         )
