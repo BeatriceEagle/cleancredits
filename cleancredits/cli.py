@@ -7,17 +7,29 @@ import click
 import cv2
 
 from .__version__ import __version__
-from .gui import HSVMaskGUI
+from .gui import GUI
 from .helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
 DEFAULT_RADIUS = 3
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(version=__version__)
-def cli():
-    pass
+@click.pass_context
+def cli(ctx):
+    if ctx.invoked_subcommand is not None:
+        return
+
+    app = GUI()
+    app.open_video()
+    if not app.video_path:
+        print("No video selected")
+        return None
+    app.build()
+    app.render()
+    app.mainloop()
+    return app._mask
 
 
 @cli.command(help="Generate a mask based on a video clip")
@@ -167,47 +179,25 @@ def mask(
         input_mask = cv2.imread(str(input_mask_path))
         input_mask = cv2.cvtColor(input_mask, cv2.COLOR_BGR2GRAY)
 
-    if gui:
-        app = HSVMaskGUI(
-            cap,
-            start_frame,
-            end_frame,
-            out_file,
-            hue_min,
-            hue_max,
-            sat_min,
-            sat_max,
-            val_min,
-            val_max,
-            grow,
-            crop_left,
-            crop_right,
-            crop_top,
-            crop_bottom,
-            input_mask,
-        )
-        app.mainloop()
-        return app._mask
-    else:
-        frame = get_frame(cap, start_frame)
-        mask = render_mask(
-            image=frame,
-            hue_min=hue_min,
-            hue_max=hue_max,
-            sat_min=sat_min,
-            sat_max=sat_max,
-            val_min=val_min,
-            val_max=val_max,
-            grow=grow,
-            crop_left=crop_left,
-            crop_right=crop_right,
-            crop_top=crop_top,
-            crop_bottom=crop_bottom,
-            input_mask=input_mask,
-            draw_mask=None,
-        )
-        cv2.imwrite(str(out_file), mask)
-        return mask
+    frame = get_frame(cap, start_frame)
+    mask = render_mask(
+        image=frame,
+        hue_min=hue_min,
+        hue_max=hue_max,
+        sat_min=sat_min,
+        sat_max=sat_max,
+        val_min=val_min,
+        val_max=val_max,
+        grow=grow,
+        crop_left=crop_left,
+        crop_right=crop_right,
+        crop_top=crop_top,
+        crop_bottom=crop_bottom,
+        input_mask=input_mask,
+        draw_mask=None,
+    )
+    cv2.imwrite(str(out_file), mask)
+    return mask
 
 
 @cli.command()
@@ -279,7 +269,14 @@ def clean(video, mask, start, end, radius, framerate, output):
         start=f"{start_frame / input_framerate}s",
         end=f"{end_frame / input_framerate}s",
     )
-    clean_frames(mask_file, clip_folder, output_clip_folder, radius)
+
+    assert mask_file.is_file()
+    mask_im = cv2.imread(str(mask_file), cv2.IMREAD_GRAYSCALE)
+    _, mask_im = cv2.threshold(mask_im, 1, 255, cv2.THRESH_BINARY)
+    for in_file, out_file in clean_frames(
+        mask_im, clip_folder, output_clip_folder, radius
+    ):
+        print(in_file, out_file)
 
     if output:
         out_file = pathlib.Path(output)

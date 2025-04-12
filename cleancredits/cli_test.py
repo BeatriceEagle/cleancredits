@@ -20,7 +20,7 @@ from .helpers_test import TESTDATA_PATH
         (-5, 200, -10, 290, -50, 365, 500, 2000, 2000, 9001, 9001, "horses-720p-mask"),
     ],
 )
-def test_mask_no_gui(
+def test_mask(
     hue_min,
     hue_max,
     sat_min,
@@ -39,7 +39,6 @@ def test_mask_no_gui(
     args = [
         f"{TESTDATA_PATH / 'horses-720p.mp4'}",
         f"--output={tmp_path / 'mask.png'}",
-        "--no-gui",
         "--hue-min",
         hue_min,
         "--hue-max",
