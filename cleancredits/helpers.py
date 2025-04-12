@@ -9,7 +9,7 @@ import numpy as np
 SPLIT_FRAME_FILENAME = "frame-%03d.png"
 
 
-def get_frame(cap, frame_num):
+def get_frame(cap, frame_num) -> np.array:
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
     _, frame = cap.read()
     if frame is None:
@@ -79,15 +79,12 @@ def split_frames(video_file: pathlib.Path, out_dir: pathlib.Path, start=None, en
 
 
 def clean_frames(
-    mask_file: pathlib.Path, in_dir: pathlib.Path, out_dir: pathlib.Path, radius: int
-):
+    mask_im: np.array, in_dir: pathlib.Path, out_dir: pathlib.Path, radius: int
+) -> (pathlib.Path, pathlib.Path):
     """For each input frame, clean it based on the mask file"""
-    assert mask_file.is_file()
     assert in_dir.is_dir()
     assert out_dir.is_dir()
 
-    mask_im = cv2.imread(str(mask_file), cv2.IMREAD_GRAYSCALE)
-    _, mask_im = cv2.threshold(mask_im, 1, 255, cv2.THRESH_BINARY)
     paths = sorted(in_dir.iterdir(), key=attrgetter("name"))
     for in_file in paths:
         out_file = out_dir / in_file.name
@@ -96,7 +93,6 @@ def clean_frames(
         if not in_file.is_file():
             continue
 
-        print(in_file)
         orig = cv2.imread(str(in_file))
         orig = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)
 
@@ -105,14 +101,24 @@ def clean_frames(
         interp = interp.astype(int)
 
         cv2.imwrite(str(out_file), interp)
+        yield in_file, out_file
 
 
-def join_frames(in_dir: pathlib.Path, out_file: pathlib.Path, framerate: str):
+def join_frames(
+    in_dir: pathlib.Path,
+    out_file: pathlib.Path,
+    framerate: str,
+    overwrite_output: bool = False,
+):
     assert in_dir.is_dir()
 
     in_ = in_dir / SPLIT_FRAME_FILENAME
     # Set the input & output framerates to the same value to avoid ffmpeg dropping
     # or duplicating frames to "fix" the speed change.
-    ffmpeg.input(str(in_), framerate=framerate).filter("fps", fps=framerate).output(
-        str(out_file), vcodec="libx264", pix_fmt="yuv420p", crf=17
-    ).run()
+    stream = (
+        ffmpeg.input(str(in_), framerate=framerate)
+        .filter("fps", fps=framerate)
+        .output(str(out_file), vcodec="libx264", pix_fmt="yuv420p", crf=17)
+    )
+
+    stream.run(overwrite_output=overwrite_output)

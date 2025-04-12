@@ -40,7 +40,11 @@ def test_clean_frames(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p"
     out_dir = tmp_path
     mask_file = TESTDATA_PATH / "horses-720p-mask.png"
-    clean_frames(mask_file, in_dir, out_dir, 3)
+
+    mask_im = cv2.imread(str(mask_file), cv2.IMREAD_GRAYSCALE)
+    _, mask_im = cv2.threshold(mask_im, 1, 255, cv2.THRESH_BINARY)
+    for _, _ in clean_frames(mask_im, in_dir, out_dir, 3):
+        pass
     cleaned_frame_files = list(out_dir.iterdir())
     assert len(list(in_dir.iterdir())) == len(cleaned_frame_files)
 
