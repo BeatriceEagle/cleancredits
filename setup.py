@@ -17,7 +17,7 @@ DESCRIPTION = "A very simple tool for removing on-screen text from video, using 
 URL = "https://github.com/BeatriceEagle/cleancredits"
 EMAIL = "beatriceeagle@gmail.com"
 AUTHOR = "BeatriceEagle"
-REQUIRES_PYTHON = ">=3.6.0"
+REQUIRES_PYTHON = ">=3.10.0"
 
 # What packages are required for this module to be executed?
 REQUIRED = [
