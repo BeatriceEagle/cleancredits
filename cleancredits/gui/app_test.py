@@ -1,3 +1,5 @@
+import pytest
+
 try:
     import tkinter as tk
 except ModuleNotFoundError as exc:
@@ -7,7 +9,10 @@ from .app import App
 
 
 def test_app_build():
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter not supported")
     app = App()
     app.video_opened = True
     app.video_width = 100

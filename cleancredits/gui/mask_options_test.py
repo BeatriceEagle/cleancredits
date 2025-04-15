@@ -1,3 +1,5 @@
+import pytest
+
 try:
     import tkinter as tk
 except ModuleNotFoundError as exc:
@@ -7,6 +9,9 @@ from .mask_options import MaskOptions
 
 
 def test_mask_options_build():
-    root = tk.Tk()
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("Tkinter not supported")
     mask_options = MaskOptions(root, 100, 100, 100, 100, None)
     mask_options.build()
