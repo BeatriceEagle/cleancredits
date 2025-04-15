@@ -1,10 +1,15 @@
 import pytest
 
-from .gui import get_zoom_crop
+try:
+    import tkinter as tk
+except ModuleNotFoundError as exc:
+    tk = None
+
+from .video_display import VideoDisplay, get_zoom_crop
 
 
 @pytest.mark.parametrize(
-    "zoom_factor,zoom_center_coords,video_dims,display_dims,expected_crop_coords,expected_zoom_dims",
+    "zoom_factor,zoom_center_coords,video_dims,max_dims,expected_crop_coords,expected_zoom_dims",
     [
         # Zoom in - video width == display width
         [1.0, (0, 0), (1000, 1000), (1000, 1000), (0, 0), (1000, 1000)],
@@ -34,32 +39,32 @@ from .gui import get_zoom_crop
         [3.0, (749, 0), (1000, 1000), (100, 100), (733, 0), (33, 33)],
     ],
 )
-def test_get_zoom_and_crop__zoom_in__video_size_gte_display_size(
+def test_get_zoom_and_crop__zoom_in__video_size_gte_max_size(
     zoom_factor: float,
     zoom_center_coords,
     video_dims,
-    display_dims,
+    max_dims,
     expected_crop_coords,
     expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
-    display_width, display_height = display_dims
+    max_width, max_height = max_dims
     crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
         zoom_factor,
         zoom_center_x,
         zoom_center_y,
         video_width,
         video_height,
-        display_width,
-        display_height,
+        max_width,
+        max_height,
     )
     assert (crop_x, crop_y) == expected_crop_coords
     assert (zoom_width, zoom_height) == expected_zoom_dims
 
 
 @pytest.mark.parametrize(
-    "zoom_factor,zoom_center_coords,video_dims,display_dims,expected_crop_coords,expected_zoom_dims",
+    "zoom_factor,zoom_center_coords,video_dims,max_dims,expected_crop_coords,expected_zoom_dims",
     [
         [1.0, (0, 0), (100, 100), (1000, 1000), (0, 0), (100, 100)],
         [2.0, (0, 0), (100, 100), (1000, 1000), (0, 0), (100, 100)],
@@ -87,32 +92,32 @@ def test_get_zoom_and_crop__zoom_in__video_size_gte_display_size(
         [30.0, (74, 0), (100, 100), (1000, 1000), (58, 0), (33, 33)],
     ],
 )
-def test_get_zoom_and_crop__zoom_in__video_size_lt_display_size(
+def test_get_zoom_and_crop__zoom_in__video_size_lt_max_size(
     zoom_factor: float,
     zoom_center_coords,
     video_dims,
-    display_dims,
+    max_dims,
     expected_crop_coords,
     expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
-    display_width, display_height = display_dims
+    max_width, max_height = max_dims
     crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
         zoom_factor,
         zoom_center_x,
         zoom_center_y,
         video_width,
         video_height,
-        display_width,
-        display_height,
+        max_width,
+        max_height,
     )
     assert (crop_x, crop_y) == expected_crop_coords
     assert (zoom_width, zoom_height) == expected_zoom_dims
 
 
 @pytest.mark.parametrize(
-    "zoom_factor,zoom_center_coords,video_dims,display_dims,expected_crop_coords,expected_zoom_dims",
+    "zoom_factor,zoom_center_coords,video_dims,max_dims,expected_crop_coords,expected_zoom_dims",
     [
         # Zoom out - video width == display width
         [0.5, (0, 0), (1000, 1000), (1000, 1000), (0, 0), (1000, 1000)],
@@ -130,32 +135,32 @@ def test_get_zoom_and_crop__zoom_in__video_size_lt_display_size(
         [0.1, (100, 100), (100, 100), (1000, 1000), (0, 0), (100, 100)],
     ],
 )
-def test_get_zoom_and_crop__zoom_out__video_size_lte_display_size(
+def test_get_zoom_and_crop__zoom_out__video_size_lte_max_size(
     zoom_factor: float,
     zoom_center_coords,
     video_dims,
-    display_dims,
+    max_dims,
     expected_crop_coords,
     expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
-    display_width, display_height = display_dims
+    max_width, max_height = max_dims
     crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
         zoom_factor,
         zoom_center_x,
         zoom_center_y,
         video_width,
         video_height,
-        display_width,
-        display_height,
+        max_width,
+        max_height,
     )
     assert (crop_x, crop_y) == expected_crop_coords
     assert (zoom_width, zoom_height) == expected_zoom_dims
 
 
 @pytest.mark.parametrize(
-    "zoom_factor,zoom_center_coords,video_dims,display_dims,expected_crop_coords,expected_zoom_dims",
+    "zoom_factor,zoom_center_coords,video_dims,max_dims,expected_crop_coords,expected_zoom_dims",
     [
         [0.5, (0, 0), (1000, 1000), (100, 100), (0, 0), (200, 200)],
         [0.2, (0, 0), (1000, 1000), (100, 100), (0, 0), (500, 500)],
@@ -171,25 +176,25 @@ def test_get_zoom_and_crop__zoom_out__video_size_lte_display_size(
         [0.1, (749, 0), (1000, 1000), (100, 100), (0, 0), (1000, 1000)],
     ],
 )
-def test_get_zoom_and_crop__zoom_out__video_size_gt_display_size(
+def test_get_zoom_and_crop__zoom_out__video_size_gt_max_size(
     zoom_factor: float,
     zoom_center_coords,
     video_dims,
-    display_dims,
+    max_dims,
     expected_crop_coords,
     expected_zoom_dims,
 ):
     zoom_center_x, zoom_center_y = zoom_center_coords
     video_width, video_height = video_dims
-    display_width, display_height = display_dims
+    max_width, max_height = max_dims
     crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
         zoom_factor,
         zoom_center_x,
         zoom_center_y,
         video_width,
         video_height,
-        display_width,
-        display_height,
+        max_width,
+        max_height,
     )
     assert (crop_x, crop_y) == expected_crop_coords
     assert (zoom_width, zoom_height) == expected_zoom_dims

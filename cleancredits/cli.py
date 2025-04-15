@@ -7,7 +7,7 @@ import click
 import cv2
 
 from .__version__ import __version__
-from .gui import GUI
+from .gui.app import App
 from .helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
@@ -21,15 +21,13 @@ def cli(ctx):
     if ctx.invoked_subcommand is not None:
         return
 
-    app = GUI()
+    app = App()
     app.open_video()
     if not app.video_path:
-        print("No video selected")
+        print("No video selected - exiting")
         return None
     app.build()
-    app.render()
     app.mainloop()
-    return app._mask
 
 
 @cli.command(help="Generate a mask based on a video clip")
@@ -194,7 +192,6 @@ def mask(
         crop_top=crop_top,
         crop_bottom=crop_bottom,
         input_mask=input_mask,
-        draw_mask=None,
     )
     cv2.imwrite(str(out_file), mask)
     return mask
