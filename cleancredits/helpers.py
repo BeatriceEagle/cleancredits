@@ -31,7 +31,6 @@ def render_mask(
     crop_top: int,
     crop_bottom: int,
     input_mask=None,
-    draw_mask=None,
 ) -> np.array:
     # Set up np arrays for lower/upper bounds for mask range
     hsv_min = np.array([hue_min, sat_min, val_min])
@@ -52,13 +51,6 @@ def render_mask(
     # Combine with base mask in bitwise_or
     if input_mask is not None:
         mask = cv2.bitwise_or(mask, input_mask)
-
-    # Combine with include/exclude masks
-    if draw_mask is not None:
-        _, include_mask = cv2.threshold(draw_mask, 128, 255, cv2.THRESH_BINARY)
-        mask = cv2.bitwise_or(mask, include_mask)
-        _, exclude_mask = cv2.threshold(draw_mask, 126, 255, cv2.THRESH_BINARY)
-        mask = cv2.bitwise_and(mask, exclude_mask)
 
     return mask
 
