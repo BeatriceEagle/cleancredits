@@ -97,7 +97,7 @@ class Slider(object):
     def handle_change(self, *args):
         val = self.variable.get()
         if type(self.variable) == tk.DoubleVar:
-            val = "{:.2f}".format(float(val)).rstrip('0').rstrip('.')
+            val = "{:.2f}".format(float(val)).rstrip("0").rstrip(".")
         self.textvariable.set(val)
 
     def handle_textvariable_change(self, *args):
