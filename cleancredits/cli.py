@@ -26,6 +26,8 @@ def cli(ctx):
     if not app.video_path:
         print("No video selected - exiting")
         return None
+    if not app.video_opened:
+        raise click.ClickException(f"Invalid video file: {app.video_path}")
     app.build()
     app.mainloop()
 
