@@ -63,11 +63,11 @@ class MaskOptions(object):
         self.crop_top = tk.IntVar(value=0)
         self.crop_right = tk.IntVar(value=video_width)
         self.crop_bottom = tk.IntVar(value=video_height)
-        self.inpaint_radius = tk.IntVar(value=3)
         self.grow = tk.IntVar(value=0)
         self.draw_mode_enable = tk.BooleanVar(value=False)
         self.draw_mode = tk.StringVar(value=DRAW_MODE_INCLUDE)
         self.draw_size = tk.IntVar(value=20)
+        self.inpaint_radius = tk.IntVar(value=3)
 
     def build(self):
         self.scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL)
@@ -287,6 +287,14 @@ class MaskOptions(object):
             variable=self.draw_size,
             command=self.handle_draw_options_change,
         )
+        self.inpaint_radius_slider = Slider(
+            self.options_container,
+            "Inpaint radius",
+            from_=0,
+            to=10,
+            variable=self.inpaint_radius,
+            command=self.handle_options_change,
+        )
 
         self.save_mask_button = ttk.Button(
             self.options_container, text="Save mask", command=self.save_mask
@@ -341,6 +349,7 @@ class MaskOptions(object):
         self.draw_mode_radio_exclude.grid(row=322, column=1, sticky="w")
         self.draw_mode_radio_reset.grid(row=323, column=1, sticky="w")
         self.draw_size_slider.grid(row=324, column=0)
+        self.inpaint_radius_slider.grid(row=325, column=0)
 
         self.save_mask_button.grid(
             row=1000, column=0, columnspan=3, **self.section_padding
@@ -405,7 +414,6 @@ class MaskOptions(object):
                 "crop_top": self.crop_top.get(),
                 "crop_right": self.crop_right.get(),
                 "crop_bottom": self.crop_bottom.get(),
-                "inpaint_radius": self.inpaint_radius.get(),
                 "display_mode": self.display_mode.get(),
                 "zoom_factor": self.zoom_factor.get(),
                 "zoom_center_x": self.zoom_center_x.get(),
@@ -413,6 +421,7 @@ class MaskOptions(object):
                 "draw_mode_enable": self.draw_mode_enable.get(),
                 "draw_mode": self.draw_mode.get(),
                 "draw_size": self.draw_size.get(),
+                "inpaint_radius": self.inpaint_radius.get(),
             }
         )
 
