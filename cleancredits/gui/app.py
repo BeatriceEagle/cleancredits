@@ -44,7 +44,9 @@ class App(object):
         # and pass relevant data to widgets.
         self.cap = cv2.VideoCapture(self.video_path)
         if not self.cap.isOpened():
-            messagebox.showerror(title="cleancredits", message=f"Invalid video file: {self.video_path}")
+            messagebox.showerror(
+                title="cleancredits", message=f"Invalid video file: {self.video_path}"
+            )
             return
         self.video_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.video_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
