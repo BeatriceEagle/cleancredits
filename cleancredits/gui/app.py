@@ -6,7 +6,7 @@ import tempfile
 
 try:
     import tkinter as tk
-    from tkinter import colorchooser, filedialog, ttk
+    from tkinter import colorchooser, filedialog, messagebox, ttk
 except ModuleNotFoundError as exc:
     tk = None
     colorchooser = None
@@ -43,6 +43,9 @@ class App(object):
         # Set up the video capture here so that we validate that it can actually be opened,
         # and pass relevant data to widgets.
         self.cap = cv2.VideoCapture(self.video_path)
+        if not self.cap.isOpened():
+            messagebox.showerror(title="cleancredits", message=f"Invalid video file: {self.video_path}")
+            return
         self.video_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.video_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_count = self.cap.get(cv2.CAP_PROP_FRAME_COUNT)
