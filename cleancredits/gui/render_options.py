@@ -9,6 +9,8 @@ except ModuleNotFoundError as exc:
     filedialog = None
     ttk = None
 
+import cv2
+
 from ..helpers import clean_frames, join_frames, split_frames
 from .slider import Slider
 from .video_display import DISPLAY_MODE_ORIGINAL
@@ -50,8 +52,12 @@ class RenderOptions(object):
             command=self.handle_end_frame_change,
         )
 
+        self.button_frame = ttk.Frame(self.parent)
         self.save_render_button = ttk.Button(
-            self.parent, text="Render", command=self.save_render
+            self.button_frame, text="Render", command=self.save_render
+        )
+        self.save_mask_button = ttk.Button(
+            self.button_frame, text="Export final mask", command=self.save_mask
         )
         self.progress_label = ttk.Label(self.parent)
         self.progress_bar = ttk.Progressbar(
@@ -62,9 +68,9 @@ class RenderOptions(object):
 
         self.start_frame_slider.grid(row=0, column=0)
         self.end_frame_slider.grid(row=1, column=0)
-        self.save_render_button.grid(
-            row=1000, column=0, columnspan=2, **self.section_padding
-        )
+        self.button_frame.grid(row=1000, column=0, columnspan=3, **self.section_padding)
+        self.save_render_button.grid(row=0, column=0)
+        self.save_mask_button.grid(row=0, column=1)
 
     def handle_selected(self):
         if self.last_frame_changed == "start":
@@ -164,3 +170,11 @@ class RenderOptions(object):
         self.progress_label.config(text=f"Done rendering {out_file}")
         print(f"Done rendering {out_file}")
         self.progress_bar.config(takefocus=False)
+
+    def save_mask(self):
+        out_file = filedialog.asksaveasfilename(
+            title="Save mask as",
+        )
+        if not out_file:
+            return
+        cv2.imwrite(str(out_file), self.video_display.get_mask())
