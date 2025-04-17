@@ -21,6 +21,58 @@ DRAW_MODE_EXCLUDE = "Never inpaint"
 DRAW_MODE_RESET = "Reset"
 
 
+FRAME_SETTINGS = frozenset(
+    [
+        "frame_number",
+    ]
+)
+
+MASK_SETTINGS = frozenset(
+    [
+        "input_mask",
+        "hue_min",
+        "hue_max",
+        "sat_min",
+        "sat_max",
+        "val_min",
+        "val_max",
+        "grow",
+        "crop_left",
+        "crop_top",
+        "crop_right",
+        "crop_bottom",
+    ]
+)
+
+INPAINT_SETTINGS = frozenset(
+    [
+        "inpaint_radius",
+    ]
+)
+
+DISPLAY_SETTINGS = frozenset(
+    [
+        "display_mode",
+    ]
+)
+
+ZOOM_SETTINGS = frozenset(
+    [
+        "zoom_factor",
+        "zoom_center_x",
+        "zoom_center_y",
+    ]
+)
+
+DRAW_SETTINGS = frozenset(
+    [
+        "draw_mode_enable",
+        "draw_mode",
+        "draw_size",
+    ]
+)
+
+
 def get_zoom_crop(
     zoom_factor: float,
     zoom_center_x: int,
@@ -85,56 +137,6 @@ def get_unzoomed_coords(
 
 
 class VideoDisplay(object):
-    FRAME_SETTINGS = frozenset(
-        [
-            "frame_number",
-        ]
-    )
-
-    MASK_SETTINGS = frozenset(
-        [
-            "hue_min",
-            "hue_max",
-            "sat_min",
-            "sat_max",
-            "val_min",
-            "val_max",
-            "grow",
-            "crop_left",
-            "crop_top",
-            "crop_right",
-            "crop_bottom",
-        ]
-    )
-
-    INPAINT_SETTINGS = frozenset(
-        [
-            "inpaint_radius",
-        ]
-    )
-
-    DISPLAY_SETTINGS = frozenset(
-        [
-            "display_mode",
-        ]
-    )
-
-    ZOOM_SETTINGS = frozenset(
-        [
-            "zoom_factor",
-            "zoom_center_x",
-            "zoom_center_y",
-        ]
-    )
-
-    DRAW_SETTINGS = frozenset(
-        [
-            "draw_mode_enable",
-            "draw_mode",
-            "draw_size",
-        ]
-    )
-
     def __init__(self, parent, cap, video_width, video_height):
         self.parent = parent
         self.root = parent.winfo_toplevel()
@@ -179,20 +181,30 @@ class VideoDisplay(object):
         self.schedule_render()
 
     def settings_changed(self, keys):
-        return any(self.new_settings[k] != self.settings.get(k) for k in keys)
+        if "input_mask" in keys:
+            if not np.array_equal(
+                self.new_settings["input_mask"], self.settings.get("input_mask")
+            ):
+                return True
+        return any(
+            self.new_settings[k] != self.settings.get(k)
+            for k in keys - set(("input_mask",))
+        )
 
     def mark_settings_changed(self, keys):
         self.settings |= {k: self.new_settings[k] for k in keys}
 
     def set(self, settings: dict):
         self.new_settings |= settings
-        if self.settings_changed(settings.keys() & self.DRAW_SETTINGS):
+        if self.settings_changed(settings.keys() & DRAW_SETTINGS):
             self.handle_draw_settings_change()
-        if self.settings_changed(settings.keys() - self.DRAW_SETTINGS):
+        if self.settings_changed(settings.keys() - DRAW_SETTINGS):
             self.schedule_render()
 
     def get_mask(self):
-        """get_mask returns the "final" version of the mask - that is, including overrides"""
+        return self._mask
+
+    def get_mask_with_overrides(self):
         return self._mask_with_overrides
 
     def get_inpaint_radius(self):
@@ -207,7 +219,7 @@ class VideoDisplay(object):
             self.canvas.config(cursor="none")
         else:
             self.canvas.config(cursor="")
-        self.mark_settings_changed(self.DRAW_SETTINGS)
+        self.mark_settings_changed(DRAW_SETTINGS)
 
     def handle_canvas_motion(self, event):
         if not self.settings.get("draw_mode_enable"):
@@ -281,14 +293,14 @@ class VideoDisplay(object):
         rendering more than once per loop. We also short circuit after each potential step of the render to limit
         how much of the work happens in each loop.
         """
-        if self.settings_changed(self.FRAME_SETTINGS):
+        if self.settings_changed(FRAME_SETTINGS):
             self._frame = get_frame(self.cap, self.new_settings["frame_number"])
-            self.mark_settings_changed(self.FRAME_SETTINGS)
+            self.mark_settings_changed(FRAME_SETTINGS)
             self.frame_changed = True
             self.root.after(1, self.render)
             return
 
-        if self.settings_changed(self.MASK_SETTINGS) or self.frame_changed:
+        if self.settings_changed(MASK_SETTINGS) or self.frame_changed:
             self._mask = render_mask(
                 image=self._frame,
                 hue_min=self.new_settings["hue_min"],
@@ -302,9 +314,9 @@ class VideoDisplay(object):
                 crop_top=self.new_settings["crop_top"],
                 crop_right=self.new_settings["crop_right"],
                 crop_bottom=self.new_settings["crop_bottom"],
-                input_mask=None,  # TODO: allow layering HSV masks into an "input mask"
+                input_mask=self.new_settings["input_mask"],
             )
-            self.mark_settings_changed(self.MASK_SETTINGS)
+            self.mark_settings_changed(MASK_SETTINGS)
             self.frame_changed = False
             self.mask_changed = True
             self.root.after(1, self.render)
@@ -326,7 +338,7 @@ class VideoDisplay(object):
 
         # Inpainting is expensive so we skip it unless preview mode is active
         if self.new_settings["display_mode"] == DISPLAY_MODE_PREVIEW:
-            if self.settings_changed(self.INPAINT_SETTINGS) or self.overrides_changed:
+            if self.settings_changed(INPAINT_SETTINGS) or self.overrides_changed:
                 frame_rgb = cv2.cvtColor(self._frame, cv2.COLOR_BGR2RGB)
                 self._inpainted = cv2.inpaint(
                     frame_rgb,
@@ -334,7 +346,7 @@ class VideoDisplay(object):
                     self.new_settings["inpaint_radius"],
                     cv2.INPAINT_TELEA,
                 )
-                self.mark_settings_changed(self.INPAINT_SETTINGS)
+                self.mark_settings_changed(INPAINT_SETTINGS)
                 self.overrides_changed = False
                 self.inpaint_changed = True
                 self.root.after(1, self.render)
@@ -343,7 +355,7 @@ class VideoDisplay(object):
             self.overrides_changed = False
             self.inpaint_changed = True
 
-        if self.settings_changed(self.DISPLAY_SETTINGS) or self.inpaint_changed:
+        if self.settings_changed(DISPLAY_SETTINGS) or self.inpaint_changed:
             if self.new_settings["display_mode"] == DISPLAY_MODE_ORIGINAL:
                 self._display = cv2.cvtColor(self._frame, cv2.COLOR_BGR2RGBA)
             elif self.new_settings["display_mode"] == DISPLAY_MODE_MASK:
@@ -355,13 +367,13 @@ class VideoDisplay(object):
                 self._display = self.draw_mask
             else:  # DISPLAY_MODE_PREVIEW
                 self._display = cv2.cvtColor(self._inpainted, cv2.COLOR_RGB2RGBA)
-            self.mark_settings_changed(self.DISPLAY_SETTINGS)
+            self.mark_settings_changed(DISPLAY_SETTINGS)
             self.inpaint_changed = False
             self.display_changed = True
             self.root.after(1, self.render)
             return
 
-        if self.settings_changed(self.ZOOM_SETTINGS) or self.display_changed:
+        if self.settings_changed(ZOOM_SETTINGS) or self.display_changed:
             # Crop to the specified center, then zoom
             zoom_factor = self.new_settings["zoom_factor"] / 100
             crop_x, crop_y, zoom_width, zoom_height = get_zoom_crop(
@@ -388,5 +400,5 @@ class VideoDisplay(object):
             self.imgtk = ImageTk.PhotoImage(image=Image.fromarray(img))
 
             self.canvas.itemconfig(self.canvas_img, image=self.imgtk)
-            self.mark_settings_changed(self.ZOOM_SETTINGS)
+            self.mark_settings_changed(ZOOM_SETTINGS)
             self.display_changed = False

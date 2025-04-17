@@ -19,6 +19,8 @@ from .video_display import (
     DRAW_MODE_EXCLUDE,
     DRAW_MODE_INCLUDE,
     DRAW_MODE_RESET,
+    FRAME_SETTINGS,
+    MASK_SETTINGS,
 )
 
 
@@ -45,29 +47,31 @@ class MaskOptions(object):
         self.video_height = video_height
         self.frame_count = frame_count
         self.video_display = video_display
+        self.zoom_factor_fit = zoom_factor_fit
 
-        self.frame = tk.IntVar(value=0)
-        self.display_mode = tk.StringVar(value=DISPLAY_MODE_MASK)
-        self.zoom_factor = tk.DoubleVar(
-            value=zoom_factor_fit,
-        )
-        self.zoom_center_x = tk.IntVar(value=video_width // 2)
-        self.zoom_center_y = tk.IntVar(value=video_height // 2)
-        self.hue_min = tk.IntVar(value=0)
-        self.hue_max = tk.IntVar(value=self.HUE_MAX)
-        self.sat_min = tk.IntVar(value=0)
-        self.sat_max = tk.IntVar(value=self.SAT_MAX)
-        self.val_min = tk.IntVar(value=0)
-        self.val_max = tk.IntVar(value=self.VAL_MAX)
-        self.crop_left = tk.IntVar(value=0)
-        self.crop_top = tk.IntVar(value=0)
-        self.crop_right = tk.IntVar(value=video_width)
-        self.crop_bottom = tk.IntVar(value=video_height)
-        self.grow = tk.IntVar(value=0)
-        self.draw_mode_enable = tk.BooleanVar(value=False)
-        self.draw_mode = tk.StringVar(value=DRAW_MODE_INCLUDE)
-        self.draw_size = tk.IntVar(value=20)
-        self.inpaint_radius = tk.IntVar(value=3)
+        self._input_mask = None
+        self.frame_number = tk.IntVar()
+        self.display_mode = tk.StringVar()
+        self.zoom_factor = tk.DoubleVar()
+        self.zoom_center_x = tk.IntVar()
+        self.zoom_center_y = tk.IntVar()
+        self.hue_min = tk.IntVar()
+        self.hue_max = tk.IntVar()
+        self.sat_min = tk.IntVar()
+        self.sat_max = tk.IntVar()
+        self.val_min = tk.IntVar()
+        self.val_max = tk.IntVar()
+        self.crop_left = tk.IntVar()
+        self.crop_top = tk.IntVar()
+        self.crop_right = tk.IntVar()
+        self.crop_bottom = tk.IntVar()
+        self.grow = tk.IntVar()
+        self.draw_mode_enable = tk.BooleanVar()
+        self.draw_mode = tk.StringVar()
+        self.draw_size = tk.IntVar()
+        self.inpaint_radius = tk.IntVar()
+
+        self.set_options(self.get_default_options())
 
     def build(self):
         self.scrollbar = ttk.Scrollbar(self.parent, orient=tk.VERTICAL)
@@ -78,12 +82,18 @@ class MaskOptions(object):
 
         self.options_container = ttk.Frame(self.canvas)
 
+        self.layer_selector = LayerSelector(
+            self.options_container,
+            "Layer",
+            self,
+        )
+
         self.frame_slider = Slider(
             self.options_container,
             "Frame",
             from_=0,
             to=self.frame_count - 1,
-            variable=self.frame,
+            variable=self.frame_number,
             command=self.handle_options_change,
         )
 
@@ -296,10 +306,6 @@ class MaskOptions(object):
             command=self.handle_options_change,
         )
 
-        self.save_mask_button = ttk.Button(
-            self.options_container, text="Save mask", command=self.save_mask
-        )
-
         self.canvas.grid(column=0, row=0, sticky="nsew")
         self.canvas.grid_propagate(0)
         self.scrollbar.grid(column=1, row=0, sticky="ns")
@@ -308,7 +314,8 @@ class MaskOptions(object):
         self.canvas.create_window(
             0, 0, window=self.options_container, anchor=tk.NW, width=300
         )
-        self.frame_slider.grid(row=0, column=0)
+        self.layer_selector.grid(row=0, column=0, columnspan=3, sticky="ew")
+        self.frame_slider.grid(row=5, column=0)
 
         self.display_mode_label.grid(row=10, column=0)
         self.display_mode_radio_mask.grid(row=10, column=1, sticky="w")
@@ -350,10 +357,6 @@ class MaskOptions(object):
         self.draw_mode_radio_reset.grid(row=323, column=1, sticky="w")
         self.draw_size_slider.grid(row=324, column=0)
         self.inpaint_radius_slider.grid(row=325, column=0)
-
-        self.save_mask_button.grid(
-            row=1000, column=0, columnspan=3, **self.section_padding
-        )
 
         # Change canvas size when widgets are added to the inner frame
         self.options_container.bind(
@@ -399,36 +402,186 @@ class MaskOptions(object):
             self.draw_size_slider.state(["disabled"])
         self.handle_options_change()
 
+    def get_default_options(self):
+        return {
+            "frame_number": 0,
+            "input_mask": None,
+            "hue_min": 0,
+            "hue_max": self.HUE_MAX,
+            "sat_min": 0,
+            "sat_max": self.SAT_MAX,
+            "val_min": 0,
+            "val_max": self.VAL_MAX,
+            "grow": 0,
+            "crop_left": 0,
+            "crop_top": 0,
+            "crop_right": self.video_width,
+            "crop_bottom": self.video_height,
+            "display_mode": DISPLAY_MODE_MASK,
+            "zoom_factor": self.zoom_factor_fit,
+            "zoom_center_x": self.video_width // 2,
+            "zoom_center_y": self.video_height // 2,
+            "draw_mode_enable": False,
+            "draw_mode": DRAW_MODE_INCLUDE,
+            "draw_size": 20,
+            "inpaint_radius": 3,
+        }
+
+    def get_options(self):
+        return {
+            "frame_number": self.frame_number.get(),
+            "input_mask": self._input_mask,
+            "hue_min": self.hue_min.get(),
+            "hue_max": self.hue_max.get(),
+            "sat_min": self.sat_min.get(),
+            "sat_max": self.sat_max.get(),
+            "val_min": self.val_min.get(),
+            "val_max": self.val_max.get(),
+            "grow": self.grow.get(),
+            "crop_left": self.crop_left.get(),
+            "crop_top": self.crop_top.get(),
+            "crop_right": self.crop_right.get(),
+            "crop_bottom": self.crop_bottom.get(),
+            "display_mode": self.display_mode.get(),
+            "zoom_factor": self.zoom_factor.get(),
+            "zoom_center_x": self.zoom_center_x.get(),
+            "zoom_center_y": self.zoom_center_y.get(),
+            "draw_mode_enable": self.draw_mode_enable.get(),
+            "draw_mode": self.draw_mode.get(),
+            "draw_size": self.draw_size.get(),
+            "inpaint_radius": self.inpaint_radius.get(),
+        }
+
+    def set_options(self, options):
+        if "input_mask" in options:
+            self._input_mask = options.pop("input_mask")
+        for k, v in options.items():
+            variable = getattr(self, k)
+            variable.set(v)
+
     def handle_options_change(self, e=None):
-        self.video_display.set(
-            {
-                "frame_number": self.frame.get(),
-                "hue_min": self.hue_min.get(),
-                "hue_max": self.hue_max.get(),
-                "sat_min": self.sat_min.get(),
-                "sat_max": self.sat_max.get(),
-                "val_min": self.val_min.get(),
-                "val_max": self.val_max.get(),
-                "grow": self.grow.get(),
-                "crop_left": self.crop_left.get(),
-                "crop_top": self.crop_top.get(),
-                "crop_right": self.crop_right.get(),
-                "crop_bottom": self.crop_bottom.get(),
-                "display_mode": self.display_mode.get(),
-                "zoom_factor": self.zoom_factor.get(),
-                "zoom_center_x": self.zoom_center_x.get(),
-                "zoom_center_y": self.zoom_center_y.get(),
-                "draw_mode_enable": self.draw_mode_enable.get(),
-                "draw_mode": self.draw_mode.get(),
-                "draw_size": self.draw_size.get(),
-                "inpaint_radius": self.inpaint_radius.get(),
-            }
+        self.video_display.set(self.get_options())
+
+
+class LayerSelector(object):
+    def __init__(self, parent, text, mask_options):
+        self.parent = parent
+        self.container = ttk.Frame(parent)
+
+        self.mask_options = mask_options
+
+        self.layers = [{}]
+
+        self.selected_index = 0
+
+        self.label = ttk.Label(self.container, text=text, anchor="center")
+        self.select_button_frame = ttk.Frame(self.container)
+        self.select_buttons = []
+        self.add_button = ttk.Button(
+            self.select_button_frame, text="+", command=self.handle_add
+        )
+        self.delete_frame = ttk.Frame(self.container)
+        self.delete_button = ttk.Button(
+            self.delete_frame, text="Delete current layer", command=self.handle_delete
         )
 
-    def save_mask(self):
-        out_file = filedialog.asksaveasfilename(
-            title="Save mask as",
+        self.container.grid_columnconfigure(0, weight=1)
+        self.label.grid(row=0, column=0, sticky="ew")
+        self.select_button_frame.grid(row=1, column=0, sticky="ew")
+        self.delete_frame.grid(row=2, column=0, sticky="ew")
+        self.delete_button.grid(row=0, column=1)
+        self.delete_frame.grid_columnconfigure(0, weight=1)
+        self.delete_frame.grid_columnconfigure(2, weight=1)
+
+        self.build()
+
+    def grid(self, *args, **kwargs):
+        self.container.grid(*args, **kwargs)
+
+    def build(self):
+        layer_count = len(self.layers)
+        if self.select_buttons:
+            for button in self.select_buttons:
+                button.destroy()
+        self.select_buttons = []
+
+        for i in range(layer_count):
+
+            def handler(index):
+                return lambda: self.handle_select(index)
+
+            button = ttk.Button(
+                self.select_button_frame,
+                text=i + 1,
+                command=handler(i),
+            )
+            self.select_buttons.append(button)
+            button.grid(row=0, column=i + 1)
+            if i == self.selected_index:
+                button["default"] = "active"
+            else:
+                button["default"] = "normal"
+
+        self.add_button.grid(row=0, column=layer_count + 1)
+
+        # Center buttons horizontally
+        self.select_button_frame.grid_columnconfigure(0, weight=1)
+        self.select_button_frame.grid_columnconfigure(layer_count + 2, weight=1)
+        for i in range(1, layer_count + 2):
+            self.select_button_frame.grid_columnconfigure(i, weight=0)
+
+        if layer_count <= 1:
+            self.delete_button.state(["disabled"])
+        else:
+            self.delete_button.state(["!disabled"])
+
+        if layer_count >= 5:
+            self.add_button.grid_forget()
+
+    def save_layer(self, index):
+        options = self.mask_options.get_options()
+        self.layers[index] = {k: options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
+        self.layers[index]["mask"] = self.mask_options.video_display.get_mask()
+
+    def load_layer(self, index):
+        # Build the input mask first
+        input_mask = None
+        for layer in self.layers[0:index]:
+            if input_mask is None:
+                input_mask = layer["mask"]
+            else:
+                input_mask = cv2.bitwise_or(layer["mask"], input_mask)
+        self.layers[index]["input_mask"] = input_mask
+        layer = self.layers[index]
+        self.mask_options.set_options(
+            {k: layer[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
         )
-        if not out_file:
+
+    def handle_select(self, index):
+        if index < 0 or index >= len(self.layers):
+            print("Invalid index")
             return
-        cv2.imwrite(str(out_file), self.video_display.get_mask())
+        if self.selected_index == index:
+            return
+
+        self.save_layer(self.selected_index)
+        self.selected_index = index
+        self.load_layer(index)
+        self.build()
+
+    def handle_add(self):
+        self.save_layer(self.selected_index)
+        default_options = self.mask_options.get_default_options()
+        new_layer = {k: default_options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
+        # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
+        new_layer["frame_number"] = self.layers[self.selected_index]["frame_number"]
+        self.layers.append(new_layer)
+        self.selected_index = len(self.layers) - 1
+        self.load_layer(self.selected_index)
+        self.build()
+
+    def handle_delete(self):
+        del self.layers[self.selected_index]
+        self.selected_index = min(self.selected_index, len(self.layers) - 1)
+        self.load_layer(self.selected_index)
+        self.build()

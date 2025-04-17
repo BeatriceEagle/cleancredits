@@ -39,7 +39,6 @@ class Slider(object):
             from_=from_,
             to=to,
             variable=variable,
-            command=self.handle_change,
         )
 
         self.value = ttk.Entry(
@@ -53,6 +52,7 @@ class Slider(object):
             self.value["width"] = len(str("{:.2f}".format(to)))
         self.textvariable.set(self.variable.get())
         self.textvariable.trace_add("write", self.handle_textvariable_change)
+        self.variable.trace_add("write", self.handle_change)
 
         self.value.bind("<Up>", lambda e: self.increment(1))
         self.value.bind("<Shift-Up>", lambda e: self.increment(10))
@@ -98,7 +98,10 @@ class Slider(object):
         val = self.variable.get()
         if type(self.variable) == tk.DoubleVar:
             val = "{:.2f}".format(float(val)).rstrip("0").rstrip(".")
-        self.textvariable.set(val)
+        else:
+            val = str(val)
+        if self.textvariable.get() != val:
+            self.textvariable.set(val)
 
     def handle_textvariable_change(self, *args):
         val = self.textvariable.get()
@@ -108,6 +111,7 @@ class Slider(object):
             val = float(val)
         else:
             val = int(val)
-        self.variable.set(val)
+        if self.variable.get() != val:
+            self.variable.set(val)
         if self.command is not None:
             self.command()
