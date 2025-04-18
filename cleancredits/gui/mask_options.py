@@ -10,7 +10,7 @@ except ModuleNotFoundError as exc:
 import cv2
 import numpy as np
 
-from ..helpers import MASK_MODE_EXCLUDE, MASK_MODE_INCLUDE
+from ..helpers import MASK_MODE_EXCLUDE, MASK_MODE_INCLUDE, combine_masks
 from .slider import Slider
 from .video_display import (
     DISPLAY_MODE_DRAW,
@@ -256,15 +256,18 @@ class MaskOptions(object):
             text=MASK_MODE_INCLUDE,
             value=MASK_MODE_INCLUDE,
             variable=self.mask_mode,
-            command=self.handle_options_change,
         )
         self.mask_mode_radio_exclude = ttk.Radiobutton(
             self.options_container,
             text=MASK_MODE_EXCLUDE,
             value=MASK_MODE_EXCLUDE,
             variable=self.mask_mode,
-            command=self.handle_options_change,
         )
+        # Use trace_add instead of command so that changes to this (even due to a new layer being added)
+        # will trigger a re-render. This isn't necessary for non-mask options because they don't change
+        # when a layer is added, and it's not necessary for other mask options because they already
+        # have this behavior as a side effect of the slider implementation.
+        self.mask_mode.trace_add("write", self.handle_options_change)
         self.grow_slider = Slider(
             self.options_container,
             "Grow",
@@ -482,7 +485,7 @@ class MaskOptions(object):
             variable = getattr(self, k)
             variable.set(v)
 
-    def handle_options_change(self, e=None):
+    def handle_options_change(self, *args):
         self.video_display.set(self.get_options())
 
 
@@ -547,11 +550,12 @@ class LayerSelector(object):
 
         self.add_button.grid(row=0, column=layer_count + 1)
 
-        # Center buttons horizontally
+        # Center select buttons horizontally
+        # First, clear weights (even if a button was deleted)
+        for i in range(1, 8):
+            self.select_button_frame.grid_columnconfigure(i, weight=0)
         self.select_button_frame.grid_columnconfigure(0, weight=1)
         self.select_button_frame.grid_columnconfigure(layer_count + 2, weight=1)
-        for i in range(1, layer_count + 2):
-            self.select_button_frame.grid_columnconfigure(i, weight=0)
 
         if layer_count <= 1:
             self.delete_button.state(["disabled"])
@@ -570,13 +574,11 @@ class LayerSelector(object):
         # Build the input mask first
         input_mask = None
         for layer in self.layers[0:index]:
-            if input_mask is None:
-                input_mask = layer["mask"]
-            else:
-                if layer["mask_mode"] == MASK_MODE_INCLUDE:
-                    input_mask = cv2.bitwise_or(layer["mask"], input_mask)
-                else:
-                    input_mask = cv2.bitwise_and(layer["mask"], input_mask)
+            input_mask = combine_masks(
+                layer["mask_mode"],
+                layer["mask"],
+                input_mask,
+            )
         self.layers[index]["input_mask"] = input_mask
         layer = self.layers[index]
         self.mask_options.set_options(
