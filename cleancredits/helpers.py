@@ -100,11 +100,12 @@ def join_frames(
     in_dir: pathlib.Path,
     out_file: pathlib.Path,
     framerate: str,
+    frame_filename: str = SPLIT_FRAME_FILENAME,
     overwrite_output: bool = False,
 ):
     assert in_dir.is_dir()
 
-    in_ = in_dir / SPLIT_FRAME_FILENAME
+    in_ = in_dir / frame_filename
     # Set the input & output framerates to the same value to avoid ffmpeg dropping
     # or duplicating frames to "fix" the speed change.
     stream = (
