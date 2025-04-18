@@ -10,6 +10,7 @@ except ModuleNotFoundError as exc:
 import cv2
 import numpy as np
 
+from ..helpers import MASK_MODE_EXCLUDE, MASK_MODE_INCLUDE
 from .slider import Slider
 from .video_display import (
     DISPLAY_MODE_DRAW,
@@ -55,6 +56,7 @@ class MaskOptions(object):
         self.zoom_factor = tk.DoubleVar()
         self.zoom_center_x = tk.IntVar()
         self.zoom_center_y = tk.IntVar()
+        self.mask_mode = tk.StringVar()
         self.hue_min = tk.IntVar()
         self.hue_max = tk.IntVar()
         self.sat_min = tk.IntVar()
@@ -247,6 +249,22 @@ class MaskOptions(object):
         self.other_alteration_label = ttk.Label(
             self.options_container, text="Other alteration"
         )
+
+        self.mask_mode_label = ttk.Label(self.options_container, text="Mask mode")
+        self.mask_mode_radio_include = ttk.Radiobutton(
+            self.options_container,
+            text=MASK_MODE_INCLUDE,
+            value=MASK_MODE_INCLUDE,
+            variable=self.mask_mode,
+            command=self.handle_options_change,
+        )
+        self.mask_mode_radio_exclude = ttk.Radiobutton(
+            self.options_container,
+            text=MASK_MODE_EXCLUDE,
+            value=MASK_MODE_EXCLUDE,
+            variable=self.mask_mode,
+            command=self.handle_options_change,
+        )
         self.grow_slider = Slider(
             self.options_container,
             "Grow",
@@ -348,7 +366,10 @@ class MaskOptions(object):
         self.other_alteration_label.grid(
             row=300, column=0, columnspan=3, **self.section_padding
         )
-        self.grow_slider.grid(row=301, column=0)
+        self.mask_mode_label.grid(row=301, column=0)
+        self.mask_mode_radio_include.grid(row=301, column=1, sticky="w")
+        self.mask_mode_radio_exclude.grid(row=302, column=1, sticky="w")
+        self.grow_slider.grid(row=310, column=0)
         self.draw_mode_enable_checkbox.grid(row=320, column=1)
         self.draw_mode_label.grid(row=321, column=0)
         self.draw_mode_radio_include.grid(row=321, column=1, sticky="w")
@@ -406,6 +427,7 @@ class MaskOptions(object):
         return {
             "frame_number": 0,
             "input_mask": None,
+            "mask_mode": MASK_MODE_INCLUDE,
             "hue_min": 0,
             "hue_max": self.HUE_MAX,
             "sat_min": 0,
@@ -431,6 +453,7 @@ class MaskOptions(object):
         return {
             "frame_number": self.frame_number.get(),
             "input_mask": self._input_mask,
+            "mask_mode": self.mask_mode.get(),
             "hue_min": self.hue_min.get(),
             "hue_max": self.hue_max.get(),
             "sat_min": self.sat_min.get(),
@@ -550,7 +573,10 @@ class LayerSelector(object):
             if input_mask is None:
                 input_mask = layer["mask"]
             else:
-                input_mask = cv2.bitwise_or(layer["mask"], input_mask)
+                if layer["mask_mode"] == MASK_MODE_INCLUDE:
+                    input_mask = cv2.bitwise_or(layer["mask"], input_mask)
+                else:
+                    input_mask = cv2.bitwise_and(layer["mask"], input_mask)
         self.layers[index]["input_mask"] = input_mask
         layer = self.layers[index]
         self.mask_options.set_options(

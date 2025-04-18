@@ -6,6 +6,9 @@ import cv2
 import ffmpeg
 import numpy as np
 
+MASK_MODE_INCLUDE = "Include"
+MASK_MODE_EXCLUDE = "Exclude"
+
 SPLIT_FRAME_FILENAME = "frame-%03d.png"
 
 
@@ -19,6 +22,7 @@ def get_frame(cap, frame_num) -> np.array:
 
 def render_mask(
     image,
+    mask_mode: str,
     hue_min: int,
     hue_max: int,
     sat_min: int,
@@ -48,9 +52,16 @@ def render_mask(
     bbox_mask[crop_top:crop_bottom, crop_left:crop_right] = 255
     mask = cv2.bitwise_and(hsv_mask, hsv_mask, mask=bbox_mask)
 
-    # Combine with base mask in bitwise_or
-    if input_mask is not None:
-        mask = cv2.bitwise_or(mask, input_mask)
+    if mask_mode == MASK_MODE_INCLUDE:
+        # Combine with base mask in bitwise_or to include the areas in both masks.
+        if input_mask is not None:
+            mask = cv2.bitwise_or(mask, input_mask)
+    else:
+        # Invert so that the selected areas are excluded from the mask instead of included.
+        mask = cv2.bitwise_not(mask)
+        # Combine with base mask in bitwise_and to remove the areas in the current mask.
+        if input_mask is not None:
+            mask = cv2.bitwise_and(mask, input_mask)
 
     return mask
 

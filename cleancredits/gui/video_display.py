@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 
-from ..helpers import get_frame, render_mask
+from ..helpers import MASK_MODE_INCLUDE, get_frame, render_mask
 
 DISPLAY_MODE_MASK = "Areas to inpaint"
 DISPLAY_MODE_DRAW = "Overrides"
@@ -29,6 +29,7 @@ FRAME_SETTINGS = frozenset(
 
 MASK_SETTINGS = frozenset(
     [
+        "mask_mode",
         "input_mask",
         "hue_min",
         "hue_max",
@@ -303,6 +304,7 @@ class VideoDisplay(object):
         if self.settings_changed(MASK_SETTINGS) or self.frame_changed:
             self._mask = render_mask(
                 image=self._frame,
+                mask_mode=self.new_settings["mask_mode"],
                 hue_min=self.new_settings["hue_min"],
                 hue_max=self.new_settings["hue_max"],
                 sat_min=self.new_settings["sat_min"],
