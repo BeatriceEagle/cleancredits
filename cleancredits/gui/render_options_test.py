@@ -13,5 +13,5 @@ def test_render_options_build():
         root = tk.Tk()
     except tk.TclError:
         pytest.skip("Tkinter not supported")
-    render_options = RenderOptions(root, "", 100, 25, 100, None)
+    render_options = RenderOptions(root, "", 100, 25, 100, None, None)
     render_options.build()
