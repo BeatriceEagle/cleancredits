@@ -66,6 +66,7 @@ class Slider(object):
 
     def state(self, *args, **kwargs):
         self.scale.state(*args, **kwargs)
+        self.value.state(*args, **kwargs)
 
     def validate(self, newval):
         if newval == "":

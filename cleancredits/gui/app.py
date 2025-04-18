@@ -100,6 +100,7 @@ class App(object):
             self.framerate,
             self.zoom_factor_fit,
             self.video_display,
+            self.tabs,
         )
         self.render_options.build()
 
