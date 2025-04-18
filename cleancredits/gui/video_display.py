@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageTk
 
-from ..helpers import get_frame, render_mask
+from ..helpers import combine_masks, get_frame, render_mask
 
 DISPLAY_MODE_MASK = "Areas to inpaint"
 DISPLAY_MODE_DRAW = "Overrides"
@@ -29,6 +29,7 @@ FRAME_SETTINGS = frozenset(
 
 MASK_SETTINGS = frozenset(
     [
+        "mask_mode",
         "input_mask",
         "hue_min",
         "hue_max",
@@ -314,7 +315,11 @@ class VideoDisplay(object):
                 crop_top=self.new_settings["crop_top"],
                 crop_right=self.new_settings["crop_right"],
                 crop_bottom=self.new_settings["crop_bottom"],
-                input_mask=self.new_settings["input_mask"],
+            )
+            self._mask_with_input = combine_masks(
+                mode=self.new_settings["mask_mode"],
+                top=self._mask,
+                bottom=self.new_settings["input_mask"],
             )
             self.mark_settings_changed(MASK_SETTINGS)
             self.frame_changed = False
@@ -325,7 +330,9 @@ class VideoDisplay(object):
         if self.draw_mask_changed or self.mask_changed:
             # Add include/exclude overrides to the mask
             _, include_mask = cv2.threshold(self.draw_mask, 128, 255, cv2.THRESH_BINARY)
-            self._mask_with_overrides = cv2.bitwise_or(self._mask, include_mask)
+            self._mask_with_overrides = cv2.bitwise_or(
+                self._mask_with_input, include_mask
+            )
             _, exclude_mask = cv2.threshold(self.draw_mask, 126, 255, cv2.THRESH_BINARY)
             self._mask_with_overrides = cv2.bitwise_and(
                 self._mask_with_overrides, exclude_mask

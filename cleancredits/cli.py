@@ -8,7 +8,15 @@ import cv2
 
 from .__version__ import __version__
 from .gui.app import App
-from .helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
+from .helpers import (
+    MASK_MODE_INCLUDE,
+    clean_frames,
+    combine_masks,
+    get_frame,
+    join_frames,
+    render_mask,
+    split_frames,
+)
 from .param_types import FRAMERATE, TIMECODE, timecode_to_frame
 
 DEFAULT_RADIUS = 3
@@ -193,8 +201,13 @@ def mask(
         crop_right=crop_right,
         crop_top=crop_top,
         crop_bottom=crop_bottom,
-        input_mask=input_mask,
     )
+    if input_mask is not None:
+        mask = combine_masks(
+            MASK_MODE_INCLUDE,
+            mask,
+            input_mask,
+        )
     cv2.imwrite(str(out_file), mask)
     return mask
 

@@ -1,22 +1,12 @@
-import copy
-import math
-import pathlib
-import sys
-import tempfile
-
 try:
     import tkinter as tk
-    from tkinter import colorchooser, filedialog, messagebox, ttk
+    from tkinter import filedialog, messagebox, ttk
 except ModuleNotFoundError as exc:
     tk = None
-    colorchooser = None
     ttk = None
 
 import cv2
-import numpy as np
-from PIL import Image, ImageTk
 
-from ..helpers import clean_frames, get_frame, join_frames, render_mask, split_frames
 from .mask_options import MaskOptions
 from .render_options import RenderOptions
 from .video_display import VideoDisplay
