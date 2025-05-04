@@ -1,2 +1,38 @@
-- name: Versatile PyInstaller
-  uses: sayyid5416/pyinstaller@v1.8.0
+name: Versatile PyInstaller
+uses: sayyid5416/pyinstaller@v1.8.0
+
+on:
+  push:
+    tags:
+      - v*
+        jobs:
+          pyinstaller-build:
+            runs-on: windows-latest
+            steps:
+              - name: Create Executable
+                uses: sayyid5416/pyinstaller@v1
+                with:
+                  python_ver: '3.13'
+                  spec: 'main.spec'
+                  upload_exe_with_name: 'cleancredits'
+                  options: --onedir, --name "cleancredits", --windowed,
+          pyinstaller-build:
+            runs-on: ubuntu-latest
+            steps:
+              - name: Create Executable
+                uses: sayyid5416/pyinstaller@v1
+                with:
+                  python_ver: '3.13'
+                  spec: 'main.spec'
+                  upload_exe_with_name: 'cleancredits'
+                  options: --onedir, --name "cleancredits", --windowed, 
+          pyinstaller-build:
+            runs-on: macos-latest
+            steps:
+              - name: Create Executable
+                uses: sayyid5416/pyinstaller@v1
+                with:
+                  python_ver: '3.13'
+                  spec: 'main.spec'
+                  upload_exe_with_name: 'cleancredits
+                  options: --onedir, --name "cleancredits", --windowed,
