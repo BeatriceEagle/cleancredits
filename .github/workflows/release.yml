@@ -5,34 +5,34 @@ on:
   push:
     tags:
       - v*
-        jobs:
-          pyinstaller-windows-build:
-            runs-on: windows-latest
-            steps:
-              - name: Create Windows Executable
-                uses: sayyid5416/pyinstaller@v1
-                with:
-                  python_ver: '3.13'
-                  spec: 'main.spec'
-                  upload_exe_with_name: 'cleancredits.exe'
-                  options: --onedir, --name "cleancredits", --windowed,
-          pyinstaller-ubuntu-build:
-            runs-on: ubuntu-latest
-            steps:
-              - name: Create Linux Executable
-                uses: sayyid5416/pyinstaller@v1
-                with:
-                  python_ver: '3.13'
-                  spec: 'main.spec'
-                  upload_exe_with_name: 'cleancredits'
-                  options: --onedir, --name "cleancredits", --windowed, 
-          pyinstaller-mac-build:
-            runs-on: macos-latest
-            steps:
-              - name: Create Mac Executable
-                uses: sayyid5416/pyinstaller@v1
-                with:
-                  python_ver: '3.13'
-                  spec: 'main.spec'
-                  upload_exe_with_name: 'cleancredits'
-                  options: --onedir, --name "cleancredits", --windowed,
+jobs:
+  pyinstaller-windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Create Windows Executable
+        uses: sayyid5416/pyinstaller@v1
+        with:
+          python_ver: '3.13'
+          spec: 'main.spec'
+          upload_exe_with_name: 'cleancredits.exe'
+          options: --onedir, --name "cleancredits", --windowed,
+  pyinstaller-ubuntu-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Linux Executable
+        uses: sayyid5416/pyinstaller@v1
+        with:
+          python_ver: '3.13'
+          spec: 'main.spec'
+          upload_exe_with_name: 'cleancredits'
+          options: --onedir, --name "cleancredits", --windowed, 
+  pyinstaller-mac-build:
+    runs-on: macos-latest
+    steps:
+      - name: Create Mac Executable
+        uses: sayyid5416/pyinstaller@v1
+        with:
+          python_ver: '3.13'
+          spec: 'main.spec'
+          upload_exe_with_name: 'cleancredits'
+          options: --onedir, --name "cleancredits", --windowed,
