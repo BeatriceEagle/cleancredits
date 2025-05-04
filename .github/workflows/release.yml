@@ -13,7 +13,8 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
-          upload_exe_with_name: 'cleancredits.exe'
+          requirements: 'requirements.txt'
+          upload_exe_with_name: 'cleancredits_windows'
           options: --onedir, --name "cleancredits", --windowed,
   pyinstaller-ubuntu-build:
     runs-on: ubuntu-latest
@@ -23,6 +24,7 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
+          requirements: 'requirements.txt'
           upload_exe_with_name: 'cleancredits_linux'
           options: --onedir, --name "cleancredits", --windowed, 
   pyinstaller-mac-latest-build:
@@ -33,6 +35,7 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
+          requirements: 'requirements.txt'
           upload_exe_with_name: 'cleancredits_macos_arm64'
           options: --onedir, --name "cleancredits", --windowed,
   pyinstaller-mac-13-build:
@@ -43,5 +46,19 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
+          requirements: 'requirements.txt'
           upload_exe_with_name: 'cleancredits_macos_intel'
           options: --onedir, --name "cleancredits", --windowed,
+  upload_assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Upload assets
+        uses: softprops/action-gh-release@v2x
+        with:
+          files: |
+            cleancredits_windows
+            cleancredits_linux
+            cleancredits_macos_arm64
+            cleancredits_macos_intel
