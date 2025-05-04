@@ -25,7 +25,7 @@ jobs:
           spec: 'main.spec'
           upload_exe_with_name: 'cleancredits_linux'
           options: --onedir, --name "cleancredits", --windowed, 
-  pyinstaller-mac-build:
+  pyinstaller-mac-latest-build:
     runs-on: macos-latest
     steps:
       - name: Create Mac Executable
@@ -33,5 +33,15 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
-          upload_exe_with_name: 'cleancredits_macos'
+          upload_exe_with_name: 'cleancredits_macos_arm64'
+          options: --onedir, --name "cleancredits", --windowed,
+  pyinstaller-mac-13-build:
+    runs-on: macos-13
+    steps:
+      - name: Create Mac Executable
+        uses: sayyid5416/pyinstaller@v1.8.0
+        with:
+          python_ver: '3.13'
+          spec: 'main.spec'
+          upload_exe_with_name: 'cleancredits_macos_intel'
           options: --onedir, --name "cleancredits", --windowed,
