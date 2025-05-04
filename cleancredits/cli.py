@@ -136,11 +136,6 @@ def cli(ctx):
     type=click.IntRange(0, clamp=True),
     default=None,
 )
-@click.option(
-    "--gui/--no-gui",
-    help="Set --no-gui to directly render the mask without displaying the GUI",
-    default=True,
-)
 def mask(
     video,
     start,
@@ -158,7 +153,6 @@ def mask(
     crop_right,
     crop_top,
     crop_bottom,
-    gui,
 ):
     cap = cv2.VideoCapture(video)
     video_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))

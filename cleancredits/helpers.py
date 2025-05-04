@@ -6,8 +6,8 @@ import cv2
 import ffmpeg
 import numpy as np
 
-MASK_MODE_INCLUDE = "Include"
-MASK_MODE_EXCLUDE = "Exclude"
+MASK_MODE_INCLUDE = "Always inpaint"
+MASK_MODE_EXCLUDE = "Never inpaint"
 
 SPLIT_FRAME_FILENAME = "frame-%03d.png"
 
