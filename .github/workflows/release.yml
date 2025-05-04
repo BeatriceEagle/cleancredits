@@ -23,7 +23,7 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
-          upload_exe_with_name: 'cleancredits'
+          upload_exe_with_name: 'cleancredits_linux'
           options: --onedir, --name "cleancredits", --windowed, 
   pyinstaller-mac-build:
     runs-on: macos-latest
@@ -33,5 +33,5 @@ jobs:
         with:
           python_ver: '3.13'
           spec: 'main.spec'
-          upload_exe_with_name: 'cleancredits'
+          upload_exe_with_name: 'cleancredits_macos'
           options: --onedir, --name "cleancredits", --windowed,
