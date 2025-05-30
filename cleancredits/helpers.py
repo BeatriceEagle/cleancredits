@@ -119,7 +119,7 @@ def join_frames(
     out_file: pathlib.Path,
     framerate: str,
     frame_filename: str = SPLIT_FRAME_FILENAME,
-    start_frame: int = None,
+    start_frame: int = 0,
     overwrite_output: bool = False,
 ):
     assert in_dir.is_dir()
