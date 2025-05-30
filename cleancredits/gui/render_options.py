@@ -159,7 +159,6 @@ class RenderOptions(object):
         # but we don't otherwise need access to mask_options.
         inpaint_radius = self.video_display.get_inpaint_radius()
         cleaned = cv2.inpaint(frame, mask, inpaint_radius, cv2.INPAINT_TELEA)
-        cleaned = cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB)
         cleaned_frame = cleaned.astype(int)
         end_frame = self.end_frame.get()
         filename = path.join(
