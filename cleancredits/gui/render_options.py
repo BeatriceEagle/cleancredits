@@ -146,7 +146,7 @@ class RenderOptions(object):
             row=2000, column=0, columnspan=3, **self.section_padding
         )
         self.progress_bar.grid(row=2001, column=0, columnspan=3)
-        self.cleaned_frames_dir = tempfile.TemporaryDirectory(delete=False)
+        self.cleaned_frames_dir = tempfile.TemporaryDirectory()
         self.progress_label.config(text=f"Cleaning frame {start_frame}...")
         # Slight delay to make sure the UI can update
         self.root.after(10, lambda: self.save_render_clean_frame(start_frame))
@@ -187,6 +187,7 @@ class RenderOptions(object):
             pathlib.Path(self.out_file),
             self.framerate,
             frame_filename=f"frame-%0{len(str(end_frame))}d.png",
+            start_frame=self.start_frame.get(),
             overwrite_output=True,
         )
         self.cleaned_frames_dir.cleanup()
