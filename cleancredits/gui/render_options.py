@@ -93,7 +93,7 @@ class RenderOptions(object):
         self.video_display.set(
             {
                 "display_mode": DISPLAY_MODE_ORIGINAL,
-                "frame_number": self.start_frame.get(),
+                "display_frame_number": self.start_frame.get(),
                 "zoom_factor": self.zoom_factor,
             }
         )
@@ -105,7 +105,7 @@ class RenderOptions(object):
         self.video_display.set(
             {
                 "display_mode": DISPLAY_MODE_ORIGINAL,
-                "frame_number": self.end_frame.get(),
+                "display_frame_number": self.end_frame.get(),
                 "zoom_factor": self.zoom_factor,
             }
         )
