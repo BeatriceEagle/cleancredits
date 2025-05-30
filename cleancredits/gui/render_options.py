@@ -93,7 +93,7 @@ class RenderOptions(object):
         self.video_display.set(
             {
                 "display_mode": DISPLAY_MODE_ORIGINAL,
-                "frame_number": self.start_frame.get(),
+                "display_frame_number": self.start_frame.get(),
                 "zoom_factor": self.zoom_factor,
             }
         )
@@ -105,7 +105,7 @@ class RenderOptions(object):
         self.video_display.set(
             {
                 "display_mode": DISPLAY_MODE_ORIGINAL,
-                "frame_number": self.end_frame.get(),
+                "display_frame_number": self.end_frame.get(),
                 "zoom_factor": self.zoom_factor,
             }
         )
@@ -146,7 +146,7 @@ class RenderOptions(object):
             row=2000, column=0, columnspan=3, **self.section_padding
         )
         self.progress_bar.grid(row=2001, column=0, columnspan=3)
-        self.cleaned_frames_dir = tempfile.TemporaryDirectory(delete=False)
+        self.cleaned_frames_dir = tempfile.TemporaryDirectory()
         self.progress_label.config(text=f"Cleaning frame {start_frame}...")
         # Slight delay to make sure the UI can update
         self.root.after(10, lambda: self.save_render_clean_frame(start_frame))
@@ -159,7 +159,6 @@ class RenderOptions(object):
         # but we don't otherwise need access to mask_options.
         inpaint_radius = self.video_display.get_inpaint_radius()
         cleaned = cv2.inpaint(frame, mask, inpaint_radius, cv2.INPAINT_TELEA)
-        cleaned = cv2.cvtColor(cleaned, cv2.COLOR_BGR2RGB)
         cleaned_frame = cleaned.astype(int)
         end_frame = self.end_frame.get()
         filename = path.join(
@@ -187,6 +186,7 @@ class RenderOptions(object):
             pathlib.Path(self.out_file),
             self.framerate,
             frame_filename=f"frame-%0{len(str(end_frame))}d.png",
+            start_frame=self.start_frame.get(),
             overwrite_output=True,
         )
         self.cleaned_frames_dir.cleanup()

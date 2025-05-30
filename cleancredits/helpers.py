@@ -1,5 +1,6 @@
 import os
 import pathlib
+import shlex
 from operator import attrgetter
 
 import cv2
@@ -118,6 +119,7 @@ def join_frames(
     out_file: pathlib.Path,
     framerate: str,
     frame_filename: str = SPLIT_FRAME_FILENAME,
+    start_frame: int = 0,
     overwrite_output: bool = False,
 ):
     assert in_dir.is_dir()
@@ -126,9 +128,10 @@ def join_frames(
     # Set the input & output framerates to the same value to avoid ffmpeg dropping
     # or duplicating frames to "fix" the speed change.
     stream = (
-        ffmpeg.input(str(in_), framerate=framerate)
+        ffmpeg.input(str(in_), framerate=framerate, start_number=start_frame)
         .filter("fps", fps=framerate)
         .output(str(out_file), vcodec="libx264", pix_fmt="yuv420p", crf=17)
     )
+    print(f"Muxing frames: {shlex.join(ffmpeg.compile(stream))}")
 
     stream.run(overwrite_output=overwrite_output)

@@ -51,7 +51,7 @@ class MaskOptions(object):
         self.zoom_factor_fit = zoom_factor_fit
 
         self._input_mask = None
-        self.frame_number = tk.IntVar()
+        self.mask_frame_number = tk.IntVar()
         self.display_mode = tk.StringVar()
         self.zoom_factor = tk.DoubleVar()
         self.zoom_center_x = tk.IntVar()
@@ -95,7 +95,7 @@ class MaskOptions(object):
             "Frame",
             from_=0,
             to=self.frame_count - 1,
-            variable=self.frame_number,
+            variable=self.mask_frame_number,
             command=self.handle_options_change,
         )
 
@@ -428,7 +428,7 @@ class MaskOptions(object):
 
     def get_default_options(self):
         return {
-            "frame_number": 0,
+            "mask_frame_number": 0,
             "input_mask": None,
             "mask_mode": MASK_MODE_INCLUDE,
             "hue_min": 0,
@@ -454,7 +454,7 @@ class MaskOptions(object):
 
     def get_options(self):
         return {
-            "frame_number": self.frame_number.get(),
+            "mask_frame_number": self.mask_frame_number.get(),
             "input_mask": self._input_mask,
             "mask_mode": self.mask_mode.get(),
             "hue_min": self.hue_min.get(),
@@ -486,7 +486,10 @@ class MaskOptions(object):
             variable.set(v)
 
     def handle_options_change(self, *args):
-        self.video_display.set(self.get_options())
+        options = self.get_options()
+        # Mirror mask frame number to also be displayed.
+        options["display_frame_number"] = options["mask_frame_number"]
+        self.video_display.set(options)
 
 
 class LayerSelector(object):
@@ -602,7 +605,9 @@ class LayerSelector(object):
         default_options = self.mask_options.get_default_options()
         new_layer = {k: default_options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
         # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
-        new_layer["frame_number"] = self.layers[self.selected_index]["frame_number"]
+        new_layer["mask_frame_number"] = self.layers[self.selected_index][
+            "mask_frame_number"
+        ]
         self.layers.append(new_layer)
         self.selected_index = len(self.layers) - 1
         self.load_layer(self.selected_index)

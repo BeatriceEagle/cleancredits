@@ -81,10 +81,11 @@ def test_join_frames(tmp_path):
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
     frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    expected_frame_count = len(
-        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
-    )
-    assert frame_count == expected_frame_count
+    files = [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    expected_frame_count = len(files)
+    assert (
+        frame_count == expected_frame_count
+    ), f"found {expected_frame_count} files: {files}"
 
 
 def test_join_frames__int_framerate(tmp_path):
@@ -99,10 +100,11 @@ def test_join_frames__int_framerate(tmp_path):
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
     frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    expected_frame_count = len(
-        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
-    )
-    assert frame_count == expected_frame_count
+    files = [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    expected_frame_count = len(files)
+    assert (
+        frame_count == expected_frame_count
+    ), f"found {expected_frame_count} files: {files}"
 
 
 def test_join_frames__float_framerate(tmp_path):
@@ -117,7 +119,27 @@ def test_join_frames__float_framerate(tmp_path):
     framerate = cap.get(cv2.CAP_PROP_FPS)
     assert framerate == expected_framerate
     frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-    expected_frame_count = len(
-        [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
-    )
-    assert frame_count == expected_frame_count
+    files = [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    expected_frame_count = len(files)
+    assert (
+        frame_count == expected_frame_count
+    ), f"found {expected_frame_count} files: {files}"
+
+
+def test_join_frames__high_start_frame(tmp_path):
+    in_dir = TESTDATA_PATH / "horses-720p-100"
+    out_file = tmp_path / "output.mp4"
+    expected_framerate = 15
+    assert not out_file.exists()
+    join_frames(in_dir, out_file, expected_framerate, start_frame=101)
+    assert out_file.exists()
+    assert out_file.is_file()
+    cap = cv2.VideoCapture(str(out_file))
+    framerate = cap.get(cv2.CAP_PROP_FPS)
+    assert framerate == expected_framerate
+    frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    files = [f for f in os.listdir(in_dir) if os.path.isfile(os.path.join(in_dir, f))]
+    expected_frame_count = len(files)
+    assert (
+        frame_count == expected_frame_count
+    ), f"found {expected_frame_count} files: {files}"
