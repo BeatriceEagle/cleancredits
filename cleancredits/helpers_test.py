@@ -122,6 +122,7 @@ def test_join_frames__float_framerate(tmp_path):
     )
     assert frame_count == expected_frame_count
 
+
 def test_join_frames__high_start_frame(tmp_path):
     in_dir = TESTDATA_PATH / "horses-720p-100"
     out_file = tmp_path / "output.mp4"

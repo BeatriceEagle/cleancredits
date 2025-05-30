@@ -605,7 +605,9 @@ class LayerSelector(object):
         default_options = self.mask_options.get_default_options()
         new_layer = {k: default_options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
         # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
-        new_layer["mask_frame_number"] = self.layers[self.selected_index]["mask_frame_number"]
+        new_layer["mask_frame_number"] = self.layers[self.selected_index][
+            "mask_frame_number"
+        ]
         self.layers.append(new_layer)
         self.selected_index = len(self.layers) - 1
         self.load_layer(self.selected_index)

@@ -297,7 +297,9 @@ class VideoDisplay(object):
         how much of the work happens in each loop.
         """
         if self.settings_changed(FRAME_SETTINGS):
-            self._display_frame = get_frame(self.cap, self.new_settings["display_frame_number"])
+            self._display_frame = get_frame(
+                self.cap, self.new_settings["display_frame_number"]
+            )
             self.mark_settings_changed(FRAME_SETTINGS)
             self.display_frame_changed = True
             self.root.after(1, self.render)
@@ -305,12 +307,17 @@ class VideoDisplay(object):
 
         if self.settings_changed(MASK_SETTINGS):
             if self.settings_changed({"mask_frame_number"}):
-                if self.new_settings["mask_frame_number"] == self.new_settings["display_frame_number"]:
+                if (
+                    self.new_settings["mask_frame_number"]
+                    == self.new_settings["display_frame_number"]
+                ):
                     self._mask_frame = self._display_frame
                 else:
                     # This generally shouldn't happen, since mask options will always set the display frame number
                     # and mask frame number to the same value, but just in case!
-                    self._mask_frame = get_frame(self.cap, self.new_settings["mask_frame_number"])
+                    self._mask_frame = get_frame(
+                        self.cap, self.new_settings["mask_frame_number"]
+                    )
             self._mask = render_mask(
                 image=self._mask_frame,
                 hue_min=self.new_settings["hue_min"],
@@ -353,7 +360,11 @@ class VideoDisplay(object):
 
         # Inpainting is expensive so we skip it unless preview mode is active
         if self.new_settings["display_mode"] == DISPLAY_MODE_PREVIEW:
-            if self.settings_changed(INPAINT_SETTINGS) or self.overrides_changed or self.display_frame_changed:
+            if (
+                self.settings_changed(INPAINT_SETTINGS)
+                or self.overrides_changed
+                or self.display_frame_changed
+            ):
                 frame_rgb = cv2.cvtColor(self._display_frame, cv2.COLOR_BGR2RGB)
                 self._inpainted = cv2.inpaint(
                     frame_rgb,
@@ -377,7 +388,9 @@ class VideoDisplay(object):
                 self._display = cv2.cvtColor(self._display_frame, cv2.COLOR_BGR2RGBA)
             elif self.new_settings["display_mode"] == DISPLAY_MODE_MASK:
                 self._display = cv2.bitwise_and(
-                    self._display_frame, self._display_frame, mask=self._mask_with_overrides
+                    self._display_frame,
+                    self._display_frame,
+                    mask=self._mask_with_overrides,
                 )
                 self._display = cv2.cvtColor(self._display, cv2.COLOR_BGR2RGBA)
             elif self.new_settings["display_mode"] == DISPLAY_MODE_DRAW:
