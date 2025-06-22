@@ -570,7 +570,7 @@ class LayerSelector(object):
 
     def save_layer(self, index):
         options = self.mask_options.get_options()
-        self.layers[index] = {k: options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
+        self.layers[index] = {k: options[k] for k in MASK_SETTINGS}
         self.layers[index]["mask"] = self.mask_options.video_display.get_mask()
 
     def load_layer(self, index):
@@ -585,7 +585,7 @@ class LayerSelector(object):
         self.layers[index]["input_mask"] = input_mask
         layer = self.layers[index]
         self.mask_options.set_options(
-            {k: layer[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
+            {k: layer[k] for k in MASK_SETTINGS}
         )
 
     def handle_select(self, index):
@@ -603,7 +603,7 @@ class LayerSelector(object):
     def handle_add(self):
         self.save_layer(self.selected_index)
         default_options = self.mask_options.get_default_options()
-        new_layer = {k: default_options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
+        new_layer = {k: default_options[k] for k in MASK_SETTINGS}
         # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
         new_layer["mask_frame_number"] = self.layers[self.selected_index][
             "mask_frame_number"
