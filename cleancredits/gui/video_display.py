@@ -364,6 +364,8 @@ class VideoDisplay(object):
                 self.settings_changed(INPAINT_SETTINGS)
                 or self.overrides_changed
                 or self.display_frame_changed
+                # Always redo inpainting layer if we're changing to Preview mode.
+                or self.settings_changed({"display_mode"})
             ):
                 frame_rgb = cv2.cvtColor(self._display_frame, cv2.COLOR_BGR2RGB)
                 self._inpainted = cv2.inpaint(
@@ -373,6 +375,7 @@ class VideoDisplay(object):
                     cv2.INPAINT_TELEA,
                 )
                 self.mark_settings_changed(INPAINT_SETTINGS)
+                self.mark_settings_changed({"display_mode"})
                 self.overrides_changed = False
                 self.display_frame_changed = False
                 self.inpaint_changed = True
