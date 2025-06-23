@@ -568,10 +568,19 @@ class LayerSelector(object):
         if layer_count >= 5:
             self.add_button.grid_forget()
 
-    def save_layer(self, index):
+    def save_layer(self, index, mask):
         options = self.mask_options.get_options()
-        self.layers[index] = {k: options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
-        self.layers[index]["mask"] = self.mask_options.video_display.get_mask()
+        self.layers[index] = {k: options[k] for k in MASK_SETTINGS}
+        self.layers[index]["mask"] = mask
+
+    def add_layer(self):
+        default_options = self.mask_options.get_default_options()
+        new_layer = {k: default_options[k] for k in MASK_SETTINGS}
+        # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
+        new_layer["mask_frame_number"] = self.layers[self.selected_index][
+            "mask_frame_number"
+        ]
+        self.layers.append(new_layer)
 
     def load_layer(self, index):
         # Build the input mask first
@@ -584,9 +593,8 @@ class LayerSelector(object):
             )
         self.layers[index]["input_mask"] = input_mask
         layer = self.layers[index]
-        self.mask_options.set_options(
-            {k: layer[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
-        )
+        self.mask_options.set_options({k: layer[k] for k in MASK_SETTINGS})
+        self.selected_index = index
 
     def handle_select(self, index):
         if index < 0 or index >= len(self.layers):
@@ -595,26 +603,18 @@ class LayerSelector(object):
         if self.selected_index == index:
             return
 
-        self.save_layer(self.selected_index)
-        self.selected_index = index
+        self.save_layer(self.selected_index, self.mask_options.video_display.get_mask())
         self.load_layer(index)
         self.build()
 
     def handle_add(self):
-        self.save_layer(self.selected_index)
-        default_options = self.mask_options.get_default_options()
-        new_layer = {k: default_options[k] for k in MASK_SETTINGS | FRAME_SETTINGS}
-        # Keep the same frame we were already on - chances are the user wants to get a different aspect of it.
-        new_layer["mask_frame_number"] = self.layers[self.selected_index][
-            "mask_frame_number"
-        ]
-        self.layers.append(new_layer)
-        self.selected_index = len(self.layers) - 1
-        self.load_layer(self.selected_index)
+        # Need to save the current layer before adding the new layer so we can set the right mask frame number on the new layer.
+        self.save_layer(self.selected_index, self.mask_options.video_display.get_mask())
+        self.add_layer()
+        self.load_layer(len(self.layers) - 1)
         self.build()
 
     def handle_delete(self):
         del self.layers[self.selected_index]
-        self.selected_index = min(self.selected_index, len(self.layers) - 1)
-        self.load_layer(self.selected_index)
+        self.load_layer(min(self.selected_index, len(self.layers) - 1))
         self.build()
