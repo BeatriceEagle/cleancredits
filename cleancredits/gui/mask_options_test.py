@@ -1,5 +1,5 @@
-import pytest
 import numpy as np
+import pytest
 
 try:
     import tkinter as tk
@@ -9,8 +9,8 @@ except ModuleNotFoundError as exc:
     ttk = None
 
 from ..helpers import MASK_MODE_INCLUDE
-from .mask_options import MaskOptions, LayerSelector
-from .video_display import VideoDisplay, MASK_SETTINGS
+from .mask_options import LayerSelector, MaskOptions
+from .video_display import MASK_SETTINGS, VideoDisplay
 
 
 def test_mask_options_build():
