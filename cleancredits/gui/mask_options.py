@@ -608,8 +608,11 @@ class LayerSelector(object):
         self.build()
 
     def handle_add(self):
+        # Need to save the current layer before adding the new layer so we can set the right mask frame number on the new layer.
+        self.save_layer(self.selected_index, self.mask_options.video_display.get_mask())
         self.add_layer()
-        self.handle_select(len(self.layers) - 1)
+        self.load_layer(len(self.layers) - 1)
+        self.build()
 
     def handle_delete(self):
         del self.layers[self.selected_index]
